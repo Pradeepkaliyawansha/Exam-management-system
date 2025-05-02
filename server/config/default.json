@@ -1,0 +1,5 @@
+{
+  "mongoURI": "mongodb://localhost:27017/exam-management",
+  "jwtSecret": "exam_management_secret_token",
+  "jwtExpiration": "24h"
+}
