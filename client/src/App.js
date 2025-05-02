@@ -14,7 +14,7 @@ import StudentLayout from "./components/layout/StudentLayout";
 
 // Auth Pages
 import Login from "./pages/auth/Login";
-// import Logout from "./pages/auth/Logout";
+import Register from "./pages/auth/Register"; // Import the Register component
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -41,8 +41,8 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            {/* <Route path="/logout" element={<Logout />} /> */}
-
+            <Route path="/register" element={<Register />} />{" "}
+            {/* Add Register route */}
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route
@@ -63,10 +63,8 @@ function App() {
                 element={<ExamCreate />}
               />
               <Route path="quizzes/:quizId/edit" element={<ExamEdit />} />
-              {/* <Route path="results" element={<AdminResults />} /> */}
               <Route path="results/:resultId" element={<ResultDetail />} />
             </Route>
-
             {/* Student Routes */}
             <Route path="/student" element={<StudentLayout />}>
               <Route
@@ -79,7 +77,6 @@ function App() {
               <Route path="take-exam/:examId" element={<TakeExam />} />
               <Route path="results/:resultId" element={<ResultDetail />} />
             </Route>
-
             {/* Fallback redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
-const config = require("config");
 const User = require("../models/User");
+require("dotenv").config();
 
 module.exports = async function (req, res, next) {
   // Get token from header
@@ -12,8 +12,11 @@ module.exports = async function (req, res, next) {
   }
 
   try {
+    // Get the JWT secret from environment variables or use default
+    const jwtSecret = process.env.JWT_SECRET || "exam_management_secret_token";
+
     // Verify token
-    const decoded = jwt.verify(token, config.get("jwtSecret"));
+    const decoded = jwt.verify(token, jwtSecret);
 
     // Add user from payload
     req.user = decoded;

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const config = require("config");
+require("dotenv").config();
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -50,8 +50,11 @@ UserSchema.methods.comparePassword = async function (candidatePassword) {
 
 // Method to generate JWT token
 UserSchema.methods.generateAuthToken = function () {
-  return jwt.sign({ id: this._id, role: this.role }, config.get("jwtSecret"), {
-    expiresIn: "24h",
+  const jwtSecret = process.env.JWT_SECRET || "exam_management_secret_token";
+  const jwtExpiration = process.env.JWT_EXPIRE || "24h";
+
+  return jwt.sign({ id: this._id, role: this.role }, jwtSecret, {
+    expiresIn: jwtExpiration,
   });
 };
 

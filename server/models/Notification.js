@@ -1,11 +1,23 @@
+const mongoose = require("mongoose");
+
 const NotificationSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    required: true,
   },
   type: {
     type: String,
-    enum: ["exam_added", "exam_updated", "result_available", "feedback_added"],
+    enum: [
+      "exam_added",
+      "exam_updated",
+      "result_available",
+      "feedback_added",
+      "success",
+      "error",
+      "warning",
+      "exam",
+    ],
     required: true,
   },
   message: {
@@ -29,3 +41,5 @@ const NotificationSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+module.exports = mongoose.model("Notification", NotificationSchema);

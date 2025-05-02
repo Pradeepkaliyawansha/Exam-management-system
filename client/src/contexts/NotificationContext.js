@@ -1,8 +1,14 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
-import { getNotifications, markNotificationAsRead } from "../api/notifications";
+import {
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from "../api/notifications";
 import { AuthContext } from "./AuthContext";
 
 export const NotificationContext = createContext();
+
+export const useNotification = () => useContext(NotificationContext);
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
@@ -29,11 +35,31 @@ export const NotificationProvider = ({ children }) => {
 
     if (currentUser) {
       fetchNotifications();
-      // Set up polling for new notifications
+      // Set up polling for new notifications every 30 seconds
       const interval = setInterval(fetchNotifications, 30000);
       return () => clearInterval(interval);
     }
   }, [currentUser]);
+
+  const addNotification = (notification) => {
+    const id = Date.now().toString();
+    setNotifications([{ ...notification, id }, ...notifications]);
+
+    // Auto-remove notification after 5 seconds if it's a success type
+    if (notification.type === "success") {
+      setTimeout(() => {
+        removeNotification(id);
+      }, 5000);
+    }
+
+    return id;
+  };
+
+  const removeNotification = (id) => {
+    setNotifications(
+      notifications.filter((notification) => notification.id !== id)
+    );
+  };
 
   const markAsRead = async (notificationId) => {
     try {
@@ -52,10 +78,7 @@ export const NotificationProvider = ({ children }) => {
 
   const markAllAsRead = async () => {
     try {
-      const unreadNotifications = notifications.filter((n) => !n.isRead);
-      for (const notification of unreadNotifications) {
-        await markNotificationAsRead(notification._id);
-      }
+      await markAllNotificationsAsRead();
       setNotifications(
         notifications.map((notification) => ({
           ...notification,
@@ -72,6 +95,8 @@ export const NotificationProvider = ({ children }) => {
       value={{
         notifications,
         loading,
+        addNotification,
+        removeNotification,
         markAsRead,
         markAllAsRead,
         unreadCount: notifications.filter((n) => !n.isRead).length,

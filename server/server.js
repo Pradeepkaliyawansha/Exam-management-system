@@ -2,6 +2,7 @@ const express = require("express");
 const connectDB = require("./config/db");
 const cors = require("cors");
 const path = require("path");
+const errorHandler = require("./middleware/error");
 
 // Initialize express
 const app = express();
@@ -14,6 +15,15 @@ connectDB();
 app.use(express.json({ extended: false }));
 app.use(cors());
 
+// Create uploads directories if they don't exist
+const fs = require("fs");
+const uploadDirs = ["./public", "./public/pdfs"];
+uploadDirs.forEach((dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
 // Serve static files (for PDF downloads)
 app.use("/pdfs", express.static(path.join(__dirname, "public/pdfs")));
 
@@ -21,7 +31,21 @@ app.use("/pdfs", express.static(path.join(__dirname, "public/pdfs")));
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/exams", require("./routes/examRoutes"));
 app.use("/api/quizzes", require("./routes/quizRoutes"));
-app.use("/api/results", require("./routes//resultRoutes"));
+app.use("/api/results", require("./routes/resultRoutes"));
+app.use("/api/student", require("./routes/studentRoutes"));
+
+// API health check
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date() });
+});
+
+// Handle 404 errors for API routes
+app.use("/api/*", (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: "API endpoint not found",
+  });
+});
 
 // Serve static assets in production
 if (process.env.NODE_ENV === "production") {
@@ -32,6 +56,9 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
   });
 }
+
+// Error handling middleware
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 

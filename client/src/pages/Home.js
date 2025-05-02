@@ -44,6 +44,14 @@ const Home = () => {
                     </Link>
                   </div>
                   <div className="mt-3 sm:mt-0 sm:ml-3">
+                    <Link
+                      to="/register"
+                      className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
+                    >
+                      Register
+                    </Link>
+                  </div>
+                  <div className="mt-3 sm:mt-0 sm:ml-3">
                     <a
                       href="#features"
                       className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:py-4 md:text-lg md:px-10"
@@ -57,11 +65,13 @@ const Home = () => {
           </div>
         </div>
         <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
-          <img
-            className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full"
-            src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1752&q=80"
-            alt="Student working on a laptop"
-          />
+          <div className="h-64 sm:h-80 md:h-96 lg:h-full w-full">
+            <img
+              className="w-full h-full object-cover object-center"
+              src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1752&q=80"
+              alt="Student working on a laptop"
+            />
+          </div>
         </div>
       </div>
 
@@ -204,17 +214,25 @@ const Home = () => {
         <div className="max-w-2xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
             <span className="block">Ready to get started?</span>
-            <span className="block">Login to your account today.</span>
+            <span className="block">Create your account today.</span>
           </h2>
           <p className="mt-4 text-lg leading-6 text-indigo-200">
             Access your exams and manage your assessment process efficiently.
           </p>
-          <Link
-            to="/login"
-            className="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 sm:w-auto"
-          >
-            Login Now
-          </Link>
+          <div className="mt-8 flex justify-center space-x-4">
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 sm:w-auto"
+            >
+              Login
+            </Link>
+            <Link
+              to="/register"
+              className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-500 hover:bg-indigo-600 sm:w-auto"
+            >
+              Register
+            </Link>
+          </div>
         </div>
       </div>
 

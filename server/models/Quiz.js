@@ -1,78 +1,65 @@
 const mongoose = require("mongoose");
 
-const ResultSchema = new mongoose.Schema({
-  student: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+const OptionSchema = new mongoose.Schema({
+  text: {
+    type: String,
     required: true,
   },
-  exam: {
+  isCorrect: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const QuestionSchema = new mongoose.Schema({
+  question: {
+    type: String,
+    required: true,
+  },
+  options: [OptionSchema],
+  marks: {
+    type: Number,
+    default: 1,
+  },
+});
+
+const QuizSchema = new mongoose.Schema({
+  examId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Exam",
     required: true,
   },
-  answers: [
-    {
-      quiz: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Quiz",
-      },
-      selectedOption: {
-        type: Number,
-      },
-      isCorrect: {
-        type: Boolean,
-      },
-    },
-  ],
-  totalScore: {
-    type: Number,
-    default: 0,
-  },
-  maxPossibleScore: {
-    type: Number,
+  title: {
+    type: String,
     required: true,
   },
-  percentage: {
-    type: Number,
-    default: 0,
-  },
-  additionalDetails: {
-    type: Object,
-  },
-  feedback: {
+  description: {
     type: String,
+    required: true,
   },
-  completed: {
-    type: Boolean,
-    default: false,
+  questions: [QuestionSchema],
+  timeLimit: {
+    type: Number, // in minutes
+    default: 5,
   },
-  startTime: {
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  createdAt: {
     type: Date,
     default: Date.now,
   },
-  endTime: {
+  updatedAt: {
     type: Date,
-  },
-  pdfGenerated: {
-    type: Boolean,
-    default: false,
-  },
-  pdfUrl: {
-    type: String,
+    default: Date.now,
   },
 });
 
-// Calculate score before saving
-ResultSchema.pre("save", function (next) {
-  if (this.answers && this.answers.length > 0) {
-    const correctAnswers = this.answers.filter(
-      (answer) => answer.isCorrect
-    ).length;
-    this.totalScore = correctAnswers;
-    this.percentage = (this.totalScore / this.maxPossibleScore) * 100;
-  }
-  next();
+// Update timestamp before updating
+QuizSchema.pre("findOneAndUpdate", function () {
+  this.set({ updatedAt: Date.now() });
 });
 
-module.exports = mongoose.model("Result", ResultSchema);
+module.exports = mongoose.model("Quiz", QuizSchema);

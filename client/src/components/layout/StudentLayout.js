@@ -3,6 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import Footer from "./Footer";
 
 const StudentLayout = () => {
   const { currentUser, loading, isStudent } = useContext(AuthContext);
@@ -27,13 +28,16 @@ const StudentLayout = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar navItems={studentNavItems} role="student" />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
-          <Outlet />
-        </main>
+    <div className="flex flex-col h-screen bg-gray-100">
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar navItems={studentNavItems} role="student" />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <Header />
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
+            <Outlet />
+          </main>
+          <Footer />
+        </div>
       </div>
     </div>
   );
