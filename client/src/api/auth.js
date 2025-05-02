@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "/api/auth";
+const API_URL = "/api";
 
 // Setup axios interceptor for JWT
 axios.interceptors.request.use(
@@ -18,7 +18,7 @@ axios.interceptors.request.use(
 
 export const login = async (credentials) => {
   try {
-    const response = await axios.post(`${API_URL}/login`, credentials);
+    const response = await axios.post(`${API_URL}/auth/login`, credentials);
     return response.data;
   } catch (error) {
     throw error;
@@ -27,7 +27,7 @@ export const login = async (credentials) => {
 
 export const register = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}/register`, userData);
+    const response = await axios.post(`${API_URL}/auth/register`, userData);
     return response.data;
   } catch (error) {
     throw error;
@@ -36,7 +36,7 @@ export const register = async (userData) => {
 
 export const getCurrentUser = async () => {
   try {
-    const response = await axios.get(`${API_URL}/me`);
+    const response = await axios.get(`${API_URL}/auth/me`);
     return response.data;
   } catch (error) {
     throw error;

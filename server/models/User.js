@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-require("dotenv").config();
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -12,40 +11,40 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
+    trim: true,
   },
   password: {
     type: String,
     required: true,
+    minlength: 6,
   },
   role: {
     type: String,
     enum: ["student", "admin"],
     default: "student",
   },
-  dateCreated: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-// Hash password before saving - fixing potential async issues
+// Hash password before saving
 UserSchema.pre("save", async function (next) {
-  console.log("Pre-save hook triggered for user");
-
-  // Only hash the password if it's modified (or new)
+  // Only hash password if it's modified (or new)
   if (!this.isModified("password")) {
-    console.log("Password not modified, skipping hashing");
     return next();
   }
 
   try {
-    console.log("Hashing password...");
+    // Generate salt
     const salt = await bcrypt.genSalt(10);
+
+    // Hash password
     this.password = await bcrypt.hash(this.password, salt);
-    console.log("Password hashed successfully");
     next();
   } catch (err) {
-    console.error("Error hashing password:", err);
     next(err);
   }
 });
@@ -55,14 +54,16 @@ UserSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Method to generate JWT token
+// Method to generate JWT
 UserSchema.methods.generateAuthToken = function () {
-  const jwtSecret = process.env.JWT_SECRET || "exam_management_secret_token";
-  const jwtExpiration = process.env.JWT_EXPIRE || "24h";
+  const payload = {
+    id: this._id,
+    role: this.role,
+  };
 
-  return jwt.sign({ id: this._id, role: this.role }, jwtSecret, {
-    expiresIn: jwtExpiration,
-  });
+  // Use environment variable for JWT secret or fallback to default
+  const secret = process.env.JWT_SECRET || "exam_management_secret_token";
+  return jwt.sign(payload, secret, { expiresIn: "24h" });
 };
 
 module.exports = mongoose.model("User", UserSchema);

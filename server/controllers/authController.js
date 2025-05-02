@@ -1,6 +1,11 @@
 const User = require("../models/User");
 const { validationResult } = require("express-validator");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
+// @route   POST api/auth/register
+// @desc    Register user
+// @access  Public
 exports.register = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -13,28 +18,35 @@ exports.register = async (req, res) => {
     // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ errors: [{ msg: "User already exists" }] });
+      return res.status(400).json({
+        success: false,
+        errors: [{ msg: "User already exists" }],
+      });
     }
 
-    // Create new user - adding console logs for debugging
-    console.log("Creating new user with data:", { name, email, role });
-
+    // Create new user
     user = new User({
       name,
       email,
-      password,
+      password, // Will be hashed in the model's pre-save hook
       role: role || "student", // Default to student if not specified
     });
 
     // Save user to database
-    console.log("Saving user to database...");
     await user.save();
-    console.log("User saved successfully:", user._id);
 
     // Generate JWT token
-    const token = user.generateAuthToken();
+    const payload = {
+      id: user.id,
+      role: user.role,
+    };
+
+    // Use environment variable for JWT secret or fallback to a default
+    const secret = process.env.JWT_SECRET || "exam_management_secret_token";
+    const token = jwt.sign(payload, secret, { expiresIn: "24h" });
 
     res.json({
+      success: true,
       token,
       user: {
         id: user.id,
@@ -45,13 +57,8 @@ exports.register = async (req, res) => {
     });
   } catch (err) {
     console.error("Registration error:", err);
-    // More detailed error information for debugging
-    if (err.name === "ValidationError") {
-      return res.status(400).json({
-        errors: [{ msg: "Validation Error", details: err.message }],
-      });
-    }
     res.status(500).json({
+      success: false,
       errors: [
         { msg: "Server error during registration", details: err.message },
       ],
@@ -74,19 +81,33 @@ exports.login = async (req, res) => {
     // Check if user exists
     let user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ errors: [{ msg: "Invalid credentials" }] });
+      return res.status(400).json({
+        success: false,
+        errors: [{ msg: "Invalid credentials" }],
+      });
     }
 
     // Check password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ errors: [{ msg: "Invalid credentials" }] });
+      return res.status(400).json({
+        success: false,
+        errors: [{ msg: "Invalid credentials" }],
+      });
     }
 
     // Generate JWT token
-    const token = user.generateAuthToken();
+    const payload = {
+      id: user.id,
+      role: user.role,
+    };
+
+    // Use environment variable for JWT secret or fallback to a default
+    const secret = process.env.JWT_SECRET || "exam_management_secret_token";
+    const token = jwt.sign(payload, secret, { expiresIn: "24h" });
 
     res.json({
+      success: true,
       token,
       user: {
         id: user.id,
@@ -96,8 +117,11 @@ exports.login = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
+    console.error("Login error:", err);
+    res.status(500).json({
+      success: false,
+      msg: "Server error during login",
+    });
   }
 };
 
@@ -106,57 +130,25 @@ exports.login = async (req, res) => {
 // @access  Private
 exports.getCurrentUser = async (req, res) => {
   try {
+    // req.user is set by the auth middleware
     const user = await User.findById(req.user.id).select("-password");
-    res.json(user);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
-};
 
-// @route   POST api/auth/register
-// @desc    Register a user
-// @access  Public
-exports.register = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { name, email, password, role } = req.body;
-
-  try {
-    // Check if user already exists
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ errors: [{ msg: "User already exists" }] });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        msg: "User not found",
+      });
     }
 
-    // Create new user
-    user = new User({
-      name,
-      email,
-      password,
-      role: role || "student", // Default to student if not specified
-    });
-
-    // Save user to database
-    await user.save();
-
-    // Generate JWT token
-    const token = user.generateAuthToken();
-
     res.json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      success: true,
+      user,
     });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
+    console.error("Error fetching current user:", err);
+    res.status(500).json({
+      success: false,
+      msg: "Server error",
+    });
   }
 };
