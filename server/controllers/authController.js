@@ -1,6 +1,64 @@
 const User = require("../models/User");
 const { validationResult } = require("express-validator");
 
+exports.register = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { name, email, password, role } = req.body;
+
+  try {
+    // Check if user already exists
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ errors: [{ msg: "User already exists" }] });
+    }
+
+    // Create new user - adding console logs for debugging
+    console.log("Creating new user with data:", { name, email, role });
+
+    user = new User({
+      name,
+      email,
+      password,
+      role: role || "student", // Default to student if not specified
+    });
+
+    // Save user to database
+    console.log("Saving user to database...");
+    await user.save();
+    console.log("User saved successfully:", user._id);
+
+    // Generate JWT token
+    const token = user.generateAuthToken();
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    console.error("Registration error:", err);
+    // More detailed error information for debugging
+    if (err.name === "ValidationError") {
+      return res.status(400).json({
+        errors: [{ msg: "Validation Error", details: err.message }],
+      });
+    }
+    res.status(500).json({
+      errors: [
+        { msg: "Server error during registration", details: err.message },
+      ],
+    });
+  }
+};
+
 // @route   POST api/auth/login
 // @desc    Authenticate user & get token
 // @access  Public

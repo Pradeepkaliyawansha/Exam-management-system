@@ -28,17 +28,24 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
-// Hash password before saving
+// Hash password before saving - fixing potential async issues
 UserSchema.pre("save", async function (next) {
+  console.log("Pre-save hook triggered for user");
+
+  // Only hash the password if it's modified (or new)
   if (!this.isModified("password")) {
+    console.log("Password not modified, skipping hashing");
     return next();
   }
 
   try {
+    console.log("Hashing password...");
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
+    console.log("Password hashed successfully");
     next();
   } catch (err) {
+    console.error("Error hashing password:", err);
     next(err);
   }
 });

@@ -5,8 +5,15 @@ const connectDB = async () => {
   try {
     const mongoURI =
       process.env.MONGO_URI || "mongodb://localhost:27017/exam-management";
-    await mongoose.connect(mongoURI);
-    console.log("MongoDB Connected...");
+    console.log("Attempting to connect to MongoDB at:", mongoURI);
+
+    const conn = await mongoose.connect(mongoURI, {
+      // These options are no longer needed in newer mongoose versions but added for compatibility
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (err) {
     console.error("MongoDB connection error:", err.message);
     // Exit process with failure

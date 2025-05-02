@@ -1,5 +1,6 @@
 const errorHandler = (err, req, res, next) => {
   // Log error for server-side debugging
+  console.error("Error middleware caught:", err);
   console.error(err.stack);
 
   // Default error status and message
@@ -25,24 +26,6 @@ const errorHandler = (err, req, res, next) => {
         field.charAt(0).toUpperCase() + field.slice(1)
       } already exists`;
     }
-  }
-
-  // Handle Mongoose cast errors (invalid ObjectId)
-  if (err.name === "CastError") {
-    statusCode = 404;
-    message = `Resource not found with id of ${err.value}`;
-  }
-
-  // Handle JWT errors
-  if (err.name === "JsonWebTokenError") {
-    statusCode = 401;
-    message = "Invalid token. Please log in again.";
-  }
-
-  // Handle JWT expired errors
-  if (err.name === "TokenExpiredError") {
-    statusCode = 401;
-    message = "Your session has expired. Please log in again.";
   }
 
   // Send standardized error response
