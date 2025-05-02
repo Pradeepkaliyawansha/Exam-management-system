@@ -1,4 +1,3 @@
-// Middleware to check for specific user roles
 const roleCheck = {
   isAdmin: function (req, res, next) {
     if (!req.user || req.user.role !== "admin") {
