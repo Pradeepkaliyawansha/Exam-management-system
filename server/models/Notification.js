@@ -6,31 +6,14 @@ const NotificationSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  type: {
-    type: String,
-    enum: [
-      "exam_added",
-      "exam_updated",
-      "result_available",
-      "feedback_added",
-      "success",
-      "error",
-      "warning",
-      "exam",
-    ],
-    required: true,
-  },
   message: {
     type: String,
     required: true,
   },
-  relatedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    refPath: "onModel",
-  },
-  onModel: {
+  type: {
     type: String,
-    enum: ["Exam", "Result"],
+    enum: ["exam", "result", "success", "error", "warning", "info"],
+    default: "info",
   },
   isRead: {
     type: Boolean,
@@ -41,5 +24,8 @@ const NotificationSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+// Add an index for better performance
+NotificationSchema.index({ userId: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Notification", NotificationSchema);

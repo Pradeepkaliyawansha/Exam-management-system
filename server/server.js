@@ -10,6 +10,26 @@ require("dotenv").config();
 // Initialize express
 const app = express();
 
+// Add a middleware to handle large headers before CORS
+app.use((req, res, next) => {
+  // Get combined header size
+  const headers = req.headers;
+  const headerSize = JSON.stringify(headers).length;
+
+  // If headers exceed 8KB (common limit)
+  if (headerSize > 8192) {
+    console.warn(
+      `Request with large headers (${headerSize} bytes) from ${req.ip}`
+    );
+    // Return 431 with helpful message
+    return res.status(431).json({
+      error: "Request Header Fields Too Large",
+      message: "Please reduce the size of your request headers",
+    });
+  }
+  next();
+});
+
 // Debug middleware to log request details
 app.use((req, res, next) => {
   console.log(`🔍 ${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -35,30 +55,32 @@ process.on("unhandledRejection", (err) => {
   });
 });
 
-// Increase limits for requests
+// Configure CORS with smaller limits
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    credentials: true,
+    // Reduce exposedHeaders to essentials
+    exposedHeaders: ["Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    // Reduce allowedHeaders to essentials
+    allowedHeaders: ["Content-Type", "Authorization"],
+    maxAge: 86400, // 24 hours in seconds
+  })
+);
+
+// Reduce body parser limits
 app.use(
   express.json({
-    limit: "50mb",
+    limit: "500kb", // Reduced from 50mb
     extended: true,
   })
 );
 app.use(
   express.urlencoded({
-    limit: "50mb",
+    limit: "500kb", // Reduced from 50mb
     extended: true,
-    parameterLimit: 100000,
-  })
-);
-
-// Configure CORS with larger header limits
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
-    credentials: true,
-    exposedHeaders: ["Content-Length", "x-auth-token", "Authorization"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
-    maxAge: 86400, // 24 hours in seconds
+    parameterLimit: 500, // Reduced from 100000
   })
 );
 
@@ -108,7 +130,7 @@ app.get("/api/health", (req, res) => {
     timestamp: new Date(),
     environment: process.env.NODE_ENV || "development",
     databaseConnection:
-      mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+      mongoose?.connection?.readyState === 1 ? "connected" : "disconnected",
   });
 });
 

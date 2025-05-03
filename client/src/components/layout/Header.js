@@ -1,40 +1,19 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
-import { getNotifications } from "../../api/notifications";
+import { useNotification } from "../../contexts/NotificationContext";
 
 const Header = () => {
   const { currentUser, logout } = useContext(AuthContext);
-  const [notifications, setNotifications] = useState([]);
+  const { notifications, loading, error, unreadCount } = useNotification();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      if (currentUser?.role === "student") {
-        try {
-          const data = await getNotifications();
-          setNotifications(data);
-        } catch (error) {
-          console.error("Failed to fetch notifications:", error);
-        }
-      }
-    };
-
-    fetchNotifications();
-    // Set up interval to check notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-
-    return () => clearInterval(interval);
-  }, [currentUser]);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
-
-  const unreadNotifications = notifications.filter((n) => !n.isRead);
 
   return (
     <header className="bg-white shadow-sm z-10">
@@ -69,7 +48,7 @@ const Header = () => {
                       d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                     />
                   </svg>
-                  {unreadNotifications.length > 0 && (
+                  {unreadCount > 0 && !error && (
                     <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
                   )}
                 </button>
@@ -81,18 +60,25 @@ const Header = () => {
                       role="menu"
                       aria-orientation="vertical"
                     >
-                      <div className="px-4 py-2 text-sm text-gray-700 font-semibold border-b">
-                        Notifications
+                      <div className="px-4 py-2 text-sm text-gray-700 font-semibold border-b flex justify-between items-center">
+                        <span>Notifications</span>
+                        {loading && (
+                          <div className="animate-spin h-4 w-4 border-2 border-indigo-500 rounded-full border-t-transparent"></div>
+                        )}
                       </div>
                       <div className="max-h-96 overflow-y-auto">
-                        {notifications.length === 0 ? (
+                        {error ? (
+                          <div className="px-4 py-2 text-sm text-gray-500">
+                            Unable to load notifications at this time.
+                          </div>
+                        ) : notifications.length === 0 ? (
                           <div className="px-4 py-2 text-sm text-gray-500">
                             No notifications
                           </div>
                         ) : (
                           notifications.map((notification) => (
                             <div
-                              key={notification._id}
+                              key={notification._id || notification.id}
                               className={`px-4 py-2 text-sm ${
                                 notification.isRead
                                   ? "text-gray-500"
@@ -101,9 +87,11 @@ const Header = () => {
                             >
                               <p>{notification.message}</p>
                               <p className="text-xs text-gray-500 mt-1">
-                                {new Date(
-                                  notification.createdAt
-                                ).toLocaleString()}
+                                {notification.createdAt
+                                  ? new Date(
+                                      notification.createdAt
+                                    ).toLocaleString()
+                                  : "Just now"}
                               </p>
                             </div>
                           ))
