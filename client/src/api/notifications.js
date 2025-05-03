@@ -44,13 +44,18 @@ notificationAxios.interceptors.response.use(
 
 export const getNotifications = async () => {
   try {
+    // Increase timeout to 5 seconds (5000ms) from 3 seconds
     const response = await notificationAxios.get("", {
-      // Set a small timeout to prevent hanging requests
-      timeout: 3000,
+      timeout: 5000,
     });
     return response.data || [];
   } catch (error) {
-    console.error("Notification API error:", error.message);
+    // More specific error handling based on error type
+    if (error.code === "ECONNABORTED") {
+      console.warn("Notification request timed out - returning empty array");
+    } else {
+      console.warn("Notification API error:", error.message);
+    }
     // Return empty array for any error
     return [];
   }
@@ -61,7 +66,7 @@ export const markNotificationAsRead = async (notificationId) => {
     const response = await notificationAxios.put(`/${notificationId}/read`);
     return response.data;
   } catch (error) {
-    console.error("Mark notification error:", error.message);
+    console.warn("Mark notification error:", error.message);
     // Return success even on error to prevent UI issues
     return { success: true };
   }
@@ -72,7 +77,7 @@ export const markAllNotificationsAsRead = async () => {
     const response = await notificationAxios.put("/mark-all-read");
     return response.data;
   } catch (error) {
-    console.error("Mark all notifications error:", error.message);
+    console.warn("Mark all notifications error:", error.message);
     // Return success even on error to prevent UI issues
     return { success: true };
   }
