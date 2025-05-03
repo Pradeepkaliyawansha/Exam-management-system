@@ -1,5 +1,8 @@
 import React, { createContext, useState, useEffect } from "react";
-import { login, register, getCurrentUser } from "../api/auth";
+import axios from "axios";
+
+// Set the base URL for all axios requests
+const API_URL = "http://localhost:5000/api";
 
 export const AuthContext = createContext();
 
@@ -14,12 +17,27 @@ export const AuthProvider = ({ children }) => {
       try {
         const token = localStorage.getItem("token");
         if (token) {
-          const user = await getCurrentUser();
-          setCurrentUser(user);
+          // Configure axios for the request
+          const config = {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          };
+
+          // Make authenticated request to get current user
+          const response = await axios.get(`${API_URL}/auth/me`, config);
+
+          if (response.data && response.data.user) {
+            setCurrentUser(response.data.user);
+          } else {
+            // Handle case where response doesn't contain expected data
+            console.error("Invalid user data received");
+            localStorage.removeItem("token");
+          }
         }
       } catch (err) {
         console.error("Failed to get current user:", err);
-        localStorage.removeItem("token");
+        localStorage.removeItem("token"); // Clear invalid token
       } finally {
         setLoading(false);
       }
@@ -31,7 +49,17 @@ export const AuthProvider = ({ children }) => {
   const handleLogin = async (email, password) => {
     setError(null);
     try {
-      const data = await login({ email, password });
+      const response = await axios.post(
+        `${API_URL}/auth/login`,
+        { email, password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = response.data;
       localStorage.setItem("token", data.token);
       setCurrentUser(data.user);
       return data.user;
@@ -44,7 +72,25 @@ export const AuthProvider = ({ children }) => {
   const handleRegister = async (userData) => {
     setError(null);
     try {
-      const data = await register(userData);
+      // Clean the user data to ensure only necessary fields are sent
+      const cleanUserData = {
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role || "student",
+      };
+
+      const response = await axios.post(
+        `${API_URL}/auth/register`,
+        cleanUserData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = response.data;
       localStorage.setItem("token", data.token);
       setCurrentUser(data.user);
       return data.user;

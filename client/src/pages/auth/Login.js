@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
+import axios from "axios";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -17,22 +18,45 @@ const Login = () => {
     setError("");
 
     try {
-      // Use the login function from AuthContext
-      const user = await login(email, password);
+      // Direct API call without using the login function to have more control
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        { email, password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = response.data;
+
+      // Store token
+      localStorage.setItem("token", data.token);
 
       // Navigate based on user role
-      if (user.role === "admin") {
+      if (data.user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/student/dashboard");
       }
+
+      // Reload to update auth state
+      window.location.reload();
     } catch (err) {
       console.error("Login error:", err);
-      setError(
-        err.response?.data?.errors?.[0]?.msg ||
-          err.response?.data?.msg ||
-          "Login failed. Please check your credentials."
-      );
+
+      if (err.response) {
+        setError(
+          err.response.data?.errors?.[0]?.msg ||
+            err.response.data?.msg ||
+            "Login failed. Please check your credentials."
+        );
+      } else if (err.request) {
+        setError("No response from server. Please try again later.");
+      } else {
+        setError("Error: " + err.message);
+      }
     } finally {
       setLoading(false);
     }

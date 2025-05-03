@@ -4,20 +4,21 @@ const { check } = require("express-validator");
 const authController = require("../controllers/authController");
 const auth = require("../middleware/auth");
 
-// Debug middleware for all routes
+// Simplified debug middleware
 const debugRequest = (req, res, next) => {
   console.log(`📝 Auth request received for: ${req.path}`);
-  console.log(`📊 Headers size: ${JSON.stringify(req.headers).length} bytes`);
-  console.log(`📊 Body size: ${JSON.stringify(req.body).length} bytes`);
-  console.log(`🔑 Body fields: ${Object.keys(req.body)}`);
+  // Only log essential info
+  console.log(`📊 Headers keys: ${Object.keys(req.headers)}`);
+  console.log(`📊 Body keys: ${Object.keys(req.body)}`);
   next();
 };
 
-// CORS preflight for all auth routes
+// CORS preflight for all auth routes with increased timeout
 router.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Max-Age", "86400"); // 24 hours
   res.status(200).send();
 });
 
@@ -27,7 +28,7 @@ router.options("*", (req, res) => {
 router.post(
   "/login",
   [
-    debugRequest, // Add debug middleware
+    debugRequest,
     check("email", "Please include a valid email").isEmail(),
     check("password", "Password is required").exists(),
   ],
@@ -45,7 +46,7 @@ router.get("/me", auth, authController.getCurrentUser);
 router.post(
   "/register",
   [
-    debugRequest, // Add debug middleware
+    debugRequest,
     check("name", "Name is required").not().isEmpty(),
     check("email", "Please include a valid email").isEmail(),
     check(

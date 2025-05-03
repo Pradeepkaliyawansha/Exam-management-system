@@ -1,42 +1,52 @@
 import axios from "axios";
 
-const API_URL = "/api";
+const API_URL = "http://localhost:5000/api"; // Direct reference to the backend server
 
-// Setup axios interceptor for JWT
-axios.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      // Using the standard Authorization header for JWT
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// Configure axios defaults
+axios.defaults.maxContentLength = 10 * 1024 * 1024; // 10 MB
+axios.defaults.maxBodyLength = 10 * 1024 * 1024; // 10 MB
+axios.defaults.timeout = 30000; // 30 seconds
 
-// Set max header size for axios globally (not natively supported)
-// We can set max content length as a safeguard
-axios.defaults.maxContentLength = 50 * 1024 * 1024; // 50 MB
+// Do NOT set up a global axios interceptor - handle auth on a per-request basis
+// This avoids issues with headers being too large
 
+// Login function - direct to server
 export const login = async (credentials) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/login`, credentials);
+    const response = await axios.post(`${API_URL}/auth/login`, credentials, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   } catch (error) {
+    console.error("Login error:", error);
     throw error;
   }
 };
 
+// Register function - direct to server
 export const register = async (userData) => {
   try {
-    // Make sure we're not sending excessively large data
-    const response = await axios.post(`${API_URL}/auth/register`, userData);
+    // Simplify data by ensuring no additional properties
+    const cleanedUserData = {
+      name: userData.name,
+      email: userData.email,
+      password: userData.password,
+      role: userData.role || "student",
+    };
+
+    const response = await axios.post(
+      `${API_URL}/auth/register`,
+      cleanedUserData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
-    // Add more detailed error logging
     console.error("Registration error:", error.message);
     if (error.response) {
       console.error("Response status:", error.response.status);
@@ -46,11 +56,52 @@ export const register = async (userData) => {
   }
 };
 
+// Get current user - with explicit token handling
 export const getCurrentUser = async () => {
   try {
-    const response = await axios.get(`${API_URL}/auth/me`);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await axios.get(`${API_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
     return response.data;
   } catch (error) {
+    console.error("Error fetching current user:", error);
+    throw error;
+  }
+};
+
+// Helper function to create authenticated requests
+export const authRequest = async (method, url, data = null) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const config = {
+      method,
+      url: `${API_URL}${url}`,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    };
+
+    if (data) {
+      config.data = data;
+    }
+
+    const response = await axios(config);
+    return response.data;
+  } catch (error) {
+    console.error(`Error making ${method} request to ${url}:`, error);
     throw error;
   }
 };

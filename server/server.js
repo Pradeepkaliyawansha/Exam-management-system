@@ -15,22 +15,40 @@ app.use((req, res, next) => {
   next();
 });
 
-// IMPORTANT: Increase limits for all parsers
-app.use(express.json({ limit: "50mb" }));
+// Increase limits for requests
 app.use(
-  express.urlencoded({ limit: "50mb", extended: true, parameterLimit: 50000 })
+  express.json({
+    limit: "50mb",
+    parameterLimit: 100000,
+    extended: true,
+  })
+);
+app.use(
+  express.urlencoded({
+    limit: "50mb",
+    extended: true,
+    parameterLimit: 100000,
+  })
 );
 
-// Configure CORS to allow direct requests from the React app
+// Configure CORS with larger header limits
 app.use(
   cors({
     origin: ["http://localhost:3000"],
     credentials: true,
-    exposedHeaders: ["Content-Length", "x-auth-token"],
+    exposedHeaders: ["Content-Length", "x-auth-token", "Authorization"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
+    maxAge: 86400, // 24 hours in seconds
   })
 );
+
+// Set header size limits
+app.use((req, res, next) => {
+  // Increase header size
+  req.connection.setMaxHeadersCount(100);
+  next();
+});
 
 // Connect to Database
 connectDB();

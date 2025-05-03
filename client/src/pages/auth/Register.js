@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
-import axios from "axios"; // Import axios directly
+import axios from "axios";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -36,31 +36,34 @@ const Register = () => {
     setError("");
 
     // Only send essential data - no need for confirmPassword
-    const userData = { name, email, password, role };
+    const userData = {
+      name,
+      email,
+      password,
+      role,
+    };
 
     try {
-      // Make a direct API call to the backend - bypassing any proxy
+      // Make direct API call to the backend - bypassing proxy
       const response = await axios.post(
         "http://localhost:5000/api/auth/register",
         userData,
         {
           headers: {
             "Content-Type": "application/json",
-            // Minimizing headers
+            // Simplified headers
           },
-          // Disable any global interceptors for this specific request
-          transformRequest: [(data) => JSON.stringify(data)],
         }
       );
 
       const data = response.data;
 
+      if (data.success === false) {
+        throw new Error(data.msg || "Registration failed");
+      }
+
       // Store token in localStorage
       localStorage.setItem("token", data.token);
-
-      // Update user session
-      // Since we're bypassing the context, we need to refresh the page
-      // or manually update the context
 
       // Redirect based on role
       if (data.user.role === "admin") {
