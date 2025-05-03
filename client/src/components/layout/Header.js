@@ -15,6 +15,9 @@ const Header = () => {
     navigate("/login");
   };
 
+  // Only display a limited number of notifications to avoid large UI renders
+  const displayedNotifications = notifications.slice(0, 5);
+
   return (
     <header className="bg-white shadow-sm z-10">
       <div className="px-4 sm:px-6 lg:px-8">
@@ -71,12 +74,12 @@ const Header = () => {
                           <div className="px-4 py-2 text-sm text-gray-500">
                             Unable to load notifications at this time.
                           </div>
-                        ) : notifications.length === 0 ? (
+                        ) : displayedNotifications.length === 0 ? (
                           <div className="px-4 py-2 text-sm text-gray-500">
                             No notifications
                           </div>
                         ) : (
-                          notifications.map((notification) => (
+                          displayedNotifications.map((notification) => (
                             <div
                               key={notification._id || notification.id}
                               className={`px-4 py-2 text-sm ${
@@ -95,6 +98,20 @@ const Header = () => {
                               </p>
                             </div>
                           ))
+                        )}
+                        {notifications.length > 5 && (
+                          <div className="px-4 py-2 text-center">
+                            <button
+                              className="text-sm text-indigo-600 hover:text-indigo-800"
+                              onClick={() => {
+                                // Close dropdown and navigate to full notification page if available
+                                setShowNotifications(false);
+                                // You can add navigation here if you have a dedicated notifications page
+                              }}
+                            >
+                              View all notifications
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
