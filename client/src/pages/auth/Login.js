@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
 import axios from "axios";
@@ -9,8 +9,19 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { login } = useContext(AuthContext);
+  const { login, currentUser } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  // Check if user is already logged in
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/student/dashboard");
+      }
+    }
+  }, [currentUser, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,9 +29,13 @@ const Login = () => {
     setError("");
 
     try {
-      // Direct API call without using the login function to have more control
+      // Use the API_URL from environment variable if available
+      const API_URL =
+        process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+
+      // Direct API call with better error handling
       const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        `${API_URL}/auth/login`,
         { email, password },
         {
           headers: {
@@ -30,6 +45,10 @@ const Login = () => {
       );
 
       const data = response.data;
+
+      if (!data.token) {
+        throw new Error("No authentication token received");
+      }
 
       // Store token
       localStorage.setItem("token", data.token);
@@ -41,20 +60,23 @@ const Login = () => {
         navigate("/student/dashboard");
       }
 
-      // Reload to update auth state
-      window.location.reload();
+      // Reload to update auth state - using setTimeout to ensure navigation happens first
+      setTimeout(() => window.location.reload(), 100);
     } catch (err) {
       console.error("Login error:", err);
 
       if (err.response) {
+        // Server responded with an error status code
         setError(
           err.response.data?.errors?.[0]?.msg ||
             err.response.data?.msg ||
             "Login failed. Please check your credentials."
         );
       } else if (err.request) {
+        // Request was made but no response received
         setError("No response from server. Please try again later.");
       } else {
+        // Error setting up the request
         setError("Error: " + err.message);
       }
     } finally {

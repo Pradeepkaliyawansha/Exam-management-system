@@ -1,16 +1,13 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api"; // Direct reference to the backend server
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
 // Configure axios defaults
 axios.defaults.maxContentLength = 10 * 1024 * 1024; // 10 MB
 axios.defaults.maxBodyLength = 10 * 1024 * 1024; // 10 MB
 axios.defaults.timeout = 30000; // 30 seconds
 
-// Do NOT set up a global axios interceptor - handle auth on a per-request basis
-// This avoids issues with headers being too large
-
-// Login function - direct to server
+// Login function
 export const login = async (credentials) => {
   try {
     const response = await axios.post(`${API_URL}/auth/login`, credentials, {
@@ -25,7 +22,7 @@ export const login = async (credentials) => {
   }
 };
 
-// Register function - direct to server
+// Register function
 export const register = async (userData) => {
   try {
     // Simplify data by ensuring no additional properties
@@ -56,7 +53,7 @@ export const register = async (userData) => {
   }
 };
 
-// Get current user - with explicit token handling
+// Get current user - with improved token handling
 export const getCurrentUser = async () => {
   try {
     const token = localStorage.getItem("token");
@@ -73,11 +70,17 @@ export const getCurrentUser = async () => {
     return response.data;
   } catch (error) {
     console.error("Error fetching current user:", error);
+
+    // If token is invalid, remove it from storage
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("token");
+    }
+
     throw error;
   }
 };
 
-// Helper function to create authenticated requests
+// Helper function to create authenticated requests with improved error handling
 export const authRequest = async (method, url, data = null) => {
   try {
     const token = localStorage.getItem("token");
@@ -102,6 +105,13 @@ export const authRequest = async (method, url, data = null) => {
     return response.data;
   } catch (error) {
     console.error(`Error making ${method} request to ${url}:`, error);
+
+    // Handle token expiration or invalid token
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("token");
+      // You could add a callback here to redirect to login page
+    }
+
     throw error;
   }
 };

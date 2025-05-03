@@ -38,9 +38,23 @@ module.exports = function (req, res, next) {
     next();
   } catch (err) {
     console.error("Token verification error:", err.message);
+
+    // Provide more specific error message based on the error
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        msg: "Token has expired, please login again",
+      });
+    } else if (err.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        msg: "Invalid token format",
+      });
+    }
+
     return res.status(401).json({
       success: false,
-      msg: "Token is not valid",
+      msg: "Token verification failed",
     });
   }
 };

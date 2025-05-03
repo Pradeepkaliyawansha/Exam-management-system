@@ -40,6 +40,11 @@ router.post(
 // @access  Private
 router.get("/me", auth, authController.getCurrentUser);
 
+// @route   GET api/auth/validate
+// @desc    Validate a token
+// @access  Private
+router.get("/validate", auth, authController.validateToken);
+
 // @route   POST api/auth/register
 // @desc    Register a user
 // @access  Public

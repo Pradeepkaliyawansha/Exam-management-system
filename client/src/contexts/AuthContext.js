@@ -1,8 +1,8 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
 
-// Set the base URL for all axios requests
-const API_URL = "http://localhost:5000/api";
+// Set the base URL for all axios requests - use environment variable if available
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
 export const AuthContext = createContext();
 
@@ -16,28 +16,43 @@ export const AuthProvider = ({ children }) => {
     const checkLoggedIn = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (token) {
-          // Configure axios for the request
-          const config = {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          };
 
-          // Make authenticated request to get current user
-          const response = await axios.get(`${API_URL}/auth/me`, config);
+        // If no token exists, just set loading to false and return
+        if (!token) {
+          setLoading(false);
+          return;
+        }
 
-          if (response.data && response.data.user) {
-            setCurrentUser(response.data.user);
-          } else {
-            // Handle case where response doesn't contain expected data
-            console.error("Invalid user data received");
-            localStorage.removeItem("token");
-          }
+        // Configure axios for the request with better error handling
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
+        // Make authenticated request to get current user
+        const response = await axios.get(`${API_URL}/auth/me`, config);
+
+        // Check if the response has the expected data structure
+        if (response.data && response.data.user) {
+          setCurrentUser(response.data.user);
+        } else {
+          // Handle case where response doesn't contain expected data
+          console.error("Invalid user data format received");
+          localStorage.removeItem("token");
         }
       } catch (err) {
-        console.error("Failed to get current user:", err);
-        localStorage.removeItem("token"); // Clear invalid token
+        // More detailed error logging
+        console.error("Failed to get current user:", err.message);
+
+        // If token is invalid or expired, remove it
+        if (
+          err.response &&
+          (err.response.status === 401 || err.response.status === 403)
+        ) {
+          console.log("Removing invalid token");
+          localStorage.removeItem("token");
+        }
       } finally {
         setLoading(false);
       }
@@ -60,12 +75,21 @@ export const AuthProvider = ({ children }) => {
       );
 
       const data = response.data;
-      localStorage.setItem("token", data.token);
-      setCurrentUser(data.user);
-      return data.user;
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        setCurrentUser(data.user);
+        return data.user;
+      } else {
+        throw new Error("No token received from server");
+      }
     } catch (err) {
-      setError(err.response?.data?.errors?.[0]?.msg || "Login failed");
-      throw err;
+      const errorMessage =
+        err.response?.data?.errors?.[0]?.msg ||
+        err.response?.data?.msg ||
+        "Login failed. Please check your credentials.";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
@@ -91,12 +115,21 @@ export const AuthProvider = ({ children }) => {
       );
 
       const data = response.data;
-      localStorage.setItem("token", data.token);
-      setCurrentUser(data.user);
-      return data.user;
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        setCurrentUser(data.user);
+        return data.user;
+      } else {
+        throw new Error("No token received from server");
+      }
     } catch (err) {
-      setError(err.response?.data?.errors?.[0]?.msg || "Registration failed");
-      throw err;
+      const errorMessage =
+        err.response?.data?.errors?.[0]?.msg ||
+        err.response?.data?.msg ||
+        "Registration failed. Please try again.";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
