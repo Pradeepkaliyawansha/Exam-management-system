@@ -10,14 +10,14 @@ require("dotenv").config();
 // Initialize express
 const app = express();
 
-// Add a middleware to handle large headers before CORS
+// Add a middleware to handle large headers with increased limit
 app.use((req, res, next) => {
   // Get combined header size
   const headers = req.headers;
   const headerSize = JSON.stringify(headers).length;
 
-  // If headers exceed 8KB (common limit)
-  if (headerSize > 8192) {
+  // Increased header size limit to 16KB (from 8KB)
+  if (headerSize > 16384) {
     console.warn(
       `Request with large headers (${headerSize} bytes) from ${req.ip}`
     );
@@ -55,32 +55,30 @@ process.on("unhandledRejection", (err) => {
   });
 });
 
-// Configure CORS with smaller limits
+// Configure CORS with more permissive limits
 app.use(
   cors({
     origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
     credentials: true,
-    // Reduce exposedHeaders to essentials
     exposedHeaders: ["Authorization"],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    // Reduce allowedHeaders to essentials
     allowedHeaders: ["Content-Type", "Authorization"],
     maxAge: 86400, // 24 hours in seconds
   })
 );
 
-// Reduce body parser limits
+// Increase body parser limits
 app.use(
   express.json({
-    limit: "500kb", // Reduced from 50mb
+    limit: "1mb", // Increased from 500kb
     extended: true,
   })
 );
 app.use(
   express.urlencoded({
-    limit: "500kb", // Reduced from 50mb
+    limit: "1mb", // Increased from 500kb
     extended: true,
-    parameterLimit: 500, // Reduced from 100000
+    parameterLimit: 1000, // Increased from 500
   })
 );
 

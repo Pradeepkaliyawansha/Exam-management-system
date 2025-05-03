@@ -298,7 +298,16 @@ exports.getNotifications = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(5); // Only return 5 most recent
 
-    return res.json(notifications);
+    // Transform to a lighter format
+    const lightNotifications = notifications.map((n) => ({
+      id: n._id,
+      message: n.message,
+      isRead: n.isRead,
+      createdAt: n.createdAt,
+      type: n.type,
+    }));
+
+    return res.json(lightNotifications);
   } catch (error) {
     console.error("Error fetching notifications:", error.message);
     // Return empty array on error to prevent client issues

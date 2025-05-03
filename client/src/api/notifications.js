@@ -7,6 +7,7 @@ const notificationAxios = axios.create({
     "Content-Type": "application/json",
     // Don't include other headers
   },
+  timeout: 5000, // 5 second timeout
 });
 
 // Add a response interceptor to handle 431 errors specifically
@@ -25,9 +26,7 @@ notificationAxios.interceptors.response.use(
 export const getNotifications = async () => {
   try {
     // Use a minimal request with reduced timeout
-    const response = await notificationAxios.get("", {
-      timeout: 5000, // 5 second timeout
-    });
+    const response = await notificationAxios.get("");
     return response.data || [];
   } catch (error) {
     console.warn("Notification API error:", error.message);

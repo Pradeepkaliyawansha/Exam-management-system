@@ -5,6 +5,29 @@ import { getStudentResults } from "../../api/results";
 import { AuthContext } from "../../contexts/AuthContext";
 import { NotificationContext } from "../../contexts/NotificationContext";
 
+// Create a simplified axios instance just for the dashboard
+import axios from "axios";
+const dashboardAxios = axios.create({
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+    // Only include essential headers
+  },
+});
+
+// Add an interceptor specifically for 431 errors
+dashboardAxios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 431) {
+      console.warn("Request header too large, returning empty data");
+      // Return empty data instead of rejecting
+      return { data: [] };
+    }
+    return Promise.reject(error);
+  }
+);
+
 const Dashboard = () => {
   const [upcomingExams, setUpcomingExams] = useState([]);
   const [recentResults, setRecentResults] = useState([]);
@@ -17,14 +40,44 @@ const Dashboard = () => {
       try {
         setLoading(true);
 
-        // Fetch available exams
-        const examsData = await getAvailableExams();
-        setUpcomingExams(examsData);
+        // Use separate try/catch blocks to ensure one failure doesn't affect the other
+        try {
+          // Get auth token from localStorage
+          const token = localStorage.getItem("token");
 
-        // Fetch student results
-        const resultsData = await getStudentResults();
-        // Get only the 3 most recent results
-        setRecentResults(resultsData.slice(0, 3));
+          // Fetch exams with minimal headers
+          const examsResponse = await dashboardAxios.get("/api/student/exams", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          setUpcomingExams(examsResponse.data || []);
+        } catch (examError) {
+          console.error("Error fetching exams:", examError.message);
+          setUpcomingExams([]);
+        }
+
+        try {
+          // Get auth token from localStorage
+          const token = localStorage.getItem("token");
+
+          // Fetch results with minimal headers
+          const resultsResponse = await dashboardAxios.get(
+            "/api/results/student",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          // Get only the 3 most recent results
+          setRecentResults((resultsResponse.data || []).slice(0, 3));
+        } catch (resultError) {
+          console.error("Error fetching results:", resultError.message);
+          setRecentResults([]);
+        }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -37,6 +90,7 @@ const Dashboard = () => {
 
   // Format date
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
     const options = {
       year: "numeric",
       month: "long",
@@ -294,7 +348,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Timetable Section */}
+      {/* Simplified Timetable Section */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           Exam Timetable
@@ -306,7 +360,7 @@ const Dashboard = () => {
         ) : (
           <div className="overflow-hidden bg-white shadow sm:rounded-md">
             <ul className="divide-y divide-gray-200">
-              {upcomingExams.map((exam) => (
+              {upcomingExams.slice(0, 3).map((exam) => (
                 <li key={exam._id}>
                   <Link
                     to={`/student/exams/${exam._id}`}
@@ -335,7 +389,9 @@ const Dashboard = () => {
                             >
                               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                             </svg>
-                            {exam.description.substring(0, 50)}...
+                            {exam.description &&
+                              exam.description.substring(0, 50)}
+                            ...
                           </p>
                         </div>
                         <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
