@@ -5,28 +5,8 @@ const notificationAxios = axios.create({
   baseURL: "/api/student/notifications",
   headers: {
     "Content-Type": "application/json",
+    // Don't include other headers
   },
-  // Explicitly strip out extra headers
-  transformRequest: [
-    function (data, headers) {
-      // Keep only essential headers
-      const minimalHeaders = {
-        "Content-Type": "application/json",
-      };
-
-      // Replace all headers with minimal set
-      Object.keys(headers).forEach((key) => {
-        delete headers[key];
-      });
-
-      // Add back only the essential ones
-      Object.keys(minimalHeaders).forEach((key) => {
-        headers[key] = minimalHeaders[key];
-      });
-
-      return JSON.stringify(data);
-    },
-  ],
 });
 
 // Add a response interceptor to handle 431 errors specifically
@@ -44,18 +24,13 @@ notificationAxios.interceptors.response.use(
 
 export const getNotifications = async () => {
   try {
-    // Increase timeout to 5 seconds (5000ms) from 3 seconds
+    // Use a minimal request with reduced timeout
     const response = await notificationAxios.get("", {
-      timeout: 5000,
+      timeout: 5000, // 5 second timeout
     });
     return response.data || [];
   } catch (error) {
-    // More specific error handling based on error type
-    if (error.code === "ECONNABORTED") {
-      console.warn("Notification request timed out - returning empty array");
-    } else {
-      console.warn("Notification API error:", error.message);
-    }
+    console.warn("Notification API error:", error.message);
     // Return empty array for any error
     return [];
   }
