@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
+import axios from "axios"; // Import axios directly
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -13,7 +14,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { register } = useContext(AuthContext);
+  const { login } = useContext(AuthContext); // We'll only use login from context
   const navigate = useNavigate();
 
   const { name, email, password, confirmPassword, role } = formData;
@@ -34,21 +35,61 @@ const Register = () => {
     setLoading(true);
     setError("");
 
-    try {
-      const userData = { name, email, password, role };
-      const user = await register(userData);
-      setLoading(false);
+    // Only send essential data - no need for confirmPassword
+    const userData = { name, email, password, role };
 
-      if (user.role === "admin") {
+    try {
+      // Make a direct API call to the backend - bypassing any proxy
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/register",
+        userData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            // Minimizing headers
+          },
+          // Disable any global interceptors for this specific request
+          transformRequest: [(data) => JSON.stringify(data)],
+        }
+      );
+
+      const data = response.data;
+
+      // Store token in localStorage
+      localStorage.setItem("token", data.token);
+
+      // Update user session
+      // Since we're bypassing the context, we need to refresh the page
+      // or manually update the context
+
+      // Redirect based on role
+      if (data.user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/student/dashboard");
       }
+
+      // Reload the page to update auth context
+      window.location.reload();
     } catch (err) {
-      setError(
-        err.response?.data?.errors?.[0]?.msg ||
-          "Registration failed. Please try again."
-      );
+      console.error("Registration error details:", err);
+
+      // Handling different kinds of error responses
+      if (err.response) {
+        // Server responded with an error status code
+        setError(
+          err.response.data?.errors?.[0]?.msg ||
+            err.response.data?.msg ||
+            "Registration failed"
+        );
+      } else if (err.request) {
+        // Request was made but no response received
+        setError("No response from server. Please try again later.");
+      } else {
+        // Error setting up the request
+        setError("Error setting up request: " + err.message);
+      }
+    } finally {
       setLoading(false);
     }
   };

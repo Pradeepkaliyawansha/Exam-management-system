@@ -4,12 +4,30 @@ const { check } = require("express-validator");
 const authController = require("../controllers/authController");
 const auth = require("../middleware/auth");
 
+// Debug middleware for all routes
+const debugRequest = (req, res, next) => {
+  console.log(`📝 Auth request received for: ${req.path}`);
+  console.log(`📊 Headers size: ${JSON.stringify(req.headers).length} bytes`);
+  console.log(`📊 Body size: ${JSON.stringify(req.body).length} bytes`);
+  console.log(`🔑 Body fields: ${Object.keys(req.body)}`);
+  next();
+};
+
+// CORS preflight for all auth routes
+router.options("*", (req, res) => {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.status(200).send();
+});
+
 // @route   POST api/auth/login
 // @desc    Authenticate user & get token
 // @access  Public
 router.post(
   "/login",
   [
+    debugRequest, // Add debug middleware
     check("email", "Please include a valid email").isEmail(),
     check("password", "Password is required").exists(),
   ],
@@ -27,6 +45,7 @@ router.get("/me", auth, authController.getCurrentUser);
 router.post(
   "/register",
   [
+    debugRequest, // Add debug middleware
     check("name", "Name is required").not().isEmpty(),
     check("email", "Please include a valid email").isEmail(),
     check(

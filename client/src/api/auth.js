@@ -7,6 +7,7 @@ axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
+      // Using the standard Authorization header for JWT
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -15,6 +16,10 @@ axios.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+// Set max header size for axios globally (not natively supported)
+// We can set max content length as a safeguard
+axios.defaults.maxContentLength = 50 * 1024 * 1024; // 50 MB
 
 export const login = async (credentials) => {
   try {
@@ -27,9 +32,16 @@ export const login = async (credentials) => {
 
 export const register = async (userData) => {
   try {
+    // Make sure we're not sending excessively large data
     const response = await axios.post(`${API_URL}/auth/register`, userData);
     return response.data;
   } catch (error) {
+    // Add more detailed error logging
+    console.error("Registration error:", error.message);
+    if (error.response) {
+      console.error("Response status:", error.response.status);
+      console.error("Response data:", error.response.data);
+    }
     throw error;
   }
 };

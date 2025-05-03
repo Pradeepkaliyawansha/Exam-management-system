@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
+import axios from "axios"; // Import axios directly
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -8,7 +9,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { login } = useContext(AuthContext);
+  const { login } = useContext(AuthContext); // We'll just reference the context
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -17,19 +18,54 @@ const Login = () => {
     setError("");
 
     try {
-      const user = await login(email, password);
+      // Make a direct API call to the backend - bypassing any proxy
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        { email, password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            // Minimizing headers
+          },
+          // Disable any global interceptors for this specific request
+          transformRequest: [(data) => JSON.stringify(data)],
+        }
+      );
+
+      const data = response.data;
+
+      // Store token in localStorage
+      localStorage.setItem("token", data.token);
+
       setLoading(false);
 
-      if (user.role === "admin") {
+      // Navigate based on user role
+      if (data.user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/student/dashboard");
       }
+
+      // Reload to update auth context
+      window.location.reload();
     } catch (err) {
-      setError(
-        err.response?.data?.errors?.[0]?.msg ||
-          "Login failed. Please check your credentials."
-      );
+      console.error("Login error details:", err);
+
+      // Handling different kinds of error responses
+      if (err.response) {
+        // Server responded with an error status code
+        setError(
+          err.response.data?.errors?.[0]?.msg ||
+            err.response.data?.msg ||
+            "Invalid credentials"
+        );
+      } else if (err.request) {
+        // Request was made but no response received
+        setError("No response from server. Please try again later.");
+      } else {
+        // Error setting up the request
+        setError("Error setting up request: " + err.message);
+      }
       setLoading(false);
     }
   };

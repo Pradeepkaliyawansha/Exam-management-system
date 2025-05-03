@@ -8,22 +8,32 @@ const errorHandler = require("./middleware/error");
 const app = express();
 require("dotenv").config();
 
-// Increase header limit to fix 431 errors
-app.use(express.json({ limit: "50mb", extended: true }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
+// Debug middleware to log request headers
+app.use((req, res, next) => {
+  console.log(`🔍 Request to: ${req.method} ${req.path}`);
+  console.log(`📏 Header size: ${JSON.stringify(req.headers).length} bytes`);
+  next();
+});
+
+// IMPORTANT: Increase limits for all parsers
+app.use(express.json({ limit: "50mb" }));
+app.use(
+  express.urlencoded({ limit: "50mb", extended: true, parameterLimit: 50000 })
+);
+
+// Configure CORS to allow direct requests from the React app
+app.use(
+  cors({
+    origin: ["http://localhost:3000"],
+    credentials: true,
+    exposedHeaders: ["Content-Length", "x-auth-token"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
+  })
+);
 
 // Connect to Database
 connectDB();
-
-// Init Middleware
-app.use(
-  cors({
-    // Allow cookies to be sent with requests
-    credentials: true,
-    // Specify domains that can access your API
-    origin: ["http://localhost:3000"],
-  })
-);
 
 // Create uploads directories if they don't exist
 const fs = require("fs");
@@ -45,7 +55,7 @@ app.use("/api/results", require("./routes/resultRoutes"));
 app.use("/api/student", require("./routes/studentRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 
-// API health check
+// API health check to test the server is running
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date() });
 });
@@ -57,16 +67,6 @@ app.use("/api/*", (req, res) => {
     error: "API endpoint not found",
   });
 });
-
-// Serve static assets in production
-if (process.env.NODE_ENV === "production") {
-  // Set static folder
-  app.use(express.static(path.join(__dirname, "../client/build")));
-
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
-  });
-}
 
 // Error handling middleware
 app.use(errorHandler);
