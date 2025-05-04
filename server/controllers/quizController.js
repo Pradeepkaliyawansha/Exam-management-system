@@ -1,11 +1,17 @@
 const Quiz = require("../models/Quiz");
 const Exam = require("../models/Exam");
+const { validationResult } = require("express-validator");
 
 // @route   GET api/admin/exams/:examId/quizzes
 // @desc    Get all quizzes for an exam
 // @access  Private/Admin
 exports.getQuizzesByExam = async (req, res) => {
   try {
+    const exam = await Exam.findById(req.params.examId);
+    if (!exam) {
+      return res.status(404).json({ msg: "Exam not found" });
+    }
+
     const quizzes = await Quiz.find({ examId: req.params.examId })
       .populate("createdBy", "name")
       .sort({ createdAt: -1 });
@@ -13,6 +19,9 @@ exports.getQuizzesByExam = async (req, res) => {
     res.json(quizzes);
   } catch (err) {
     console.error(err.message);
+    if (err.kind === "ObjectId") {
+      return res.status(404).json({ msg: "Exam not found" });
+    }
     res.status(500).send("Server error");
   }
 };
@@ -44,6 +53,11 @@ exports.getQuizById = async (req, res) => {
 // @desc    Create a new quiz for an exam
 // @access  Private/Admin
 exports.createQuiz = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { title, description, questions, timeLimit } = req.body;
 
   try {
@@ -65,6 +79,10 @@ exports.createQuiz = async (req, res) => {
 
     const quiz = await newQuiz.save();
 
+    // Update exam's quizzes array
+    exam.quizzes.push(quiz._id);
+    await exam.save();
+
     res.json(quiz);
   } catch (err) {
     console.error(err.message);
@@ -76,6 +94,11 @@ exports.createQuiz = async (req, res) => {
 // @desc    Update a quiz
 // @access  Private/Admin
 exports.updateQuiz = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { title, description, questions, timeLimit } = req.body;
 
   try {
@@ -115,6 +138,15 @@ exports.deleteQuiz = async (req, res) => {
       return res.status(404).json({ msg: "Quiz not found" });
     }
 
+    // Remove quiz from exam's quizzes array
+    const exam = await Exam.findById(quiz.examId);
+    if (exam) {
+      exam.quizzes = exam.quizzes.filter(
+        (quizId) => quizId.toString() !== req.params.id
+      );
+      await exam.save();
+    }
+
     await quiz.remove();
 
     res.json({ msg: "Quiz removed" });
@@ -123,6 +155,42 @@ exports.deleteQuiz = async (req, res) => {
     if (err.kind === "ObjectId") {
       return res.status(404).json({ msg: "Quiz not found" });
     }
+    res.status(500).send("Server error");
+  }
+};
+
+// @route   GET api/admin/exams/:examId/quiz-summary
+// @desc    Get quiz summary for an exam
+// @access  Private/Admin
+exports.getQuizSummary = async (req, res) => {
+  try {
+    const exam = await Exam.findById(req.params.examId);
+    if (!exam) {
+      return res.status(404).json({ msg: "Exam not found" });
+    }
+
+    const quizzes = await Quiz.find({ examId: req.params.examId });
+
+    const summary = {
+      totalQuizzes: quizzes.length,
+      totalQuestions: quizzes.reduce(
+        (total, quiz) => total + quiz.questions.length,
+        0
+      ),
+      totalMarks: quizzes.reduce((total, quiz) => {
+        return (
+          total +
+          quiz.questions.reduce((sum, question) => sum + question.marks, 0)
+        );
+      }, 0),
+      averageTimeLimit:
+        quizzes.reduce((total, quiz) => total + quiz.timeLimit, 0) /
+        quizzes.length,
+    };
+
+    res.json(summary);
+  } catch (err) {
+    console.error(err.message);
     res.status(500).send("Server error");
   }
 };
