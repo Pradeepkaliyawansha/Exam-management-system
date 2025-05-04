@@ -86,6 +86,17 @@ exports.createQuiz = async (req, res) => {
     res.json(quiz);
   } catch (err) {
     console.error(err.message);
+    // Check if it's a validation error
+    if (err.name === "ValidationError") {
+      const errors = Object.values(err.errors).map((error) => ({
+        field: error.path,
+        message: error.message,
+      }));
+      return res.status(400).json({
+        msg: "Validation failed",
+        errors,
+      });
+    }
     res.status(500).send("Server error");
   }
 };

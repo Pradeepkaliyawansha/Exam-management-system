@@ -126,28 +126,41 @@ const QuizForm = ({
 
     // Validate each question
     formData.questions.forEach((question, qIndex) => {
+      // Check if question text is empty
       if (!question.question.trim()) {
         newErrors[`question-${qIndex}`] = "Question text is required";
       }
 
-      // Check if at least one option is selected as correct
-      const hasCorrectAnswer = question.options.some(
-        (option) => option.isCorrect
-      );
-      if (!hasCorrectAnswer) {
-        newErrors[`question-${qIndex}-correct`] = "Select the correct answer";
-      }
-
       // Check if all options have text
+      let hasEmptyOption = false;
       question.options.forEach((option, oIndex) => {
         if (!option.text.trim()) {
           newErrors[`question-${qIndex}-option-${oIndex}`] =
             "Option text is required";
+          hasEmptyOption = true;
         }
       });
+
+      // Check if exactly one option is selected as correct
+      const correctAnswers = question.options.filter(
+        (option) => option.isCorrect
+      );
+      if (correctAnswers.length === 0) {
+        newErrors[`question-${qIndex}-correct`] = "Select a correct answer";
+      } else if (correctAnswers.length > 1) {
+        newErrors[`question-${qIndex}-correct`] =
+          "Only one correct answer allowed";
+      }
+
+      // Check marks value
+      if (!question.marks || question.marks <= 0) {
+        newErrors[`question-${qIndex}-marks`] = "Marks must be greater than 0";
+      }
     });
 
     setErrors(newErrors);
+
+    console.log("Validation errors:", newErrors); // Debug log
     return Object.keys(newErrors).length === 0;
   };
 
@@ -155,10 +168,25 @@ const QuizForm = ({
     e.preventDefault();
 
     if (validate()) {
-      onSubmit(formData);
+      // Ensure data is properly formatted before sending
+      const submitData = {
+        title: formData.title,
+        description: formData.description,
+        timeLimit: Number(formData.timeLimit), // Ensure it's a number
+        questions: formData.questions.map((question) => ({
+          question: question.question,
+          options: question.options.map((option) => ({
+            text: option.text,
+            isCorrect: option.isCorrect,
+          })),
+          marks: Number(question.marks), // Ensure it's a number
+        })),
+      };
+
+      console.log("Submitting quiz data:", submitData); // Debug log
+      onSubmit(submitData);
     }
   };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">

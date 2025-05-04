@@ -14,15 +14,33 @@ const QuizCreate = () => {
       setIsSubmitting(true);
       setError(null);
 
-      await createQuiz(examId, formData);
+      console.log("Creating quiz with data:", formData);
+      console.log("Exam ID:", examId);
+
+      const response = await createQuiz(examId, formData);
+      console.log("Quiz creation response:", response);
+
+      // Navigate to quiz management page for this exam
       navigate(`/admin/exams/${examId}/quizzes`);
     } catch (error) {
       console.error("Error creating quiz:", error);
-      setError(
-        error.response?.data?.msg ||
-          error.response?.data?.message ||
-          "Failed to create quiz. Please try again later."
-      );
+      console.error("Error response:", error.response);
+
+      // Extract more detailed error message
+      let errorMessage = "Failed to create quiz. Please try again later.";
+
+      if (error.response?.data?.errors) {
+        // Handle validation errors
+        errorMessage = error.response.data.errors
+          .map((err) => err.message || err.msg)
+          .join(", ");
+      } else if (error.response?.data?.msg) {
+        errorMessage = error.response.data.msg;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      setError(errorMessage);
       setIsSubmitting(false);
     }
   };

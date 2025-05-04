@@ -53,9 +53,20 @@ export const getQuizById = async (quizId) => {
 
 export const createQuiz = async (examId, quizData) => {
   try {
+    console.log("Sending quiz data to API:", { examId, quizData }); // Debug log
+
     const response = await api.post(`/admin/exams/${examId}/quizzes`, quizData);
+    console.log("API response:", response.data); // Debug log
+
     return response.data;
   } catch (error) {
+    console.error("API Error:", error);
+    console.error("Error details:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      config: error.config,
+    });
     throw error;
   }
 };
