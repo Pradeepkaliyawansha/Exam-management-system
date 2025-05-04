@@ -31,11 +31,20 @@ const ResultDetail = () => {
   const handleGeneratePDF = async () => {
     try {
       setGeneratingPDF(true);
+      setError(null); // Clear any previous errors
+
+      console.log("Generating PDF for result:", resultId);
       const response = await generatePDF(resultId);
+
+      console.log("PDF generation response:", response);
 
       // Open PDF in new tab
       if (response && response.pdfUrl) {
-        window.open(response.pdfUrl, "_blank");
+        const pdfUrl = process.env.REACT_APP_API_URL
+          ? `${process.env.REACT_APP_API_URL}${response.pdfUrl}`
+          : `http://localhost:5000${response.pdfUrl}`;
+
+        window.open(pdfUrl, "_blank");
 
         // Update result state with PDF URL
         setResult((prevResult) => ({
@@ -43,15 +52,23 @@ const ResultDetail = () => {
           pdfGenerated: true,
           pdfUrl: response.pdfUrl,
         }));
+      } else {
+        throw new Error("Invalid response from server");
       }
     } catch (error) {
       console.error("Error generating PDF:", error);
-      setError("Failed to generate PDF certificate. Please try again later.");
+
+      // Extract error message
+      const errorMessage =
+        error.response?.data?.msg ||
+        error.message ||
+        "Failed to generate PDF certificate. Please try again later.";
+
+      setError(errorMessage);
     } finally {
       setGeneratingPDF(false);
     }
   };
-
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";

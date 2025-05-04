@@ -6,6 +6,8 @@ const errorHandler = require("./middleware/error");
 const headerSizeHandler = require("./middleware/headerSizeHandler");
 const mongoose = require("mongoose");
 
+// Serve static files from the pdfs directory
+
 // Load environment variables
 require("dotenv").config();
 
@@ -93,8 +95,16 @@ uploadDirs.forEach((dir) => {
   }
 });
 
-// Serve static files (for PDF downloads)
+// Serve static files from the pdfs directory
 app.use("/pdfs", express.static(path.join(__dirname, "public/pdfs")));
+
+// Add error handling for PDF file requests
+app.use("/pdfs", (req, res, next) => {
+  res.status(404).json({
+    error: "PDF file not found",
+    message: "The requested PDF file does not exist",
+  });
+});
 
 // Define Routes with better error handling for routes loading
 try {

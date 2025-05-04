@@ -148,27 +148,78 @@ exports.generatePDF = async (req, res) => {
     doc.moveDown();
     doc.fontSize(15).text(`Exam: ${result.exam.title}`);
     doc.fontSize(12).text(`Description: ${result.exam.description}`);
-    doc
-      .fontSize(12)
-      .text(`Date: ${new Date(result.exam.date).toLocaleDateString()}`);
-    doc.fontSize(12).text(`Duration: ${result.exam.duration} minutes`);
-    doc.moveDown();
-    doc
-      .fontSize(15)
-      .text(`Score: ${result.totalScore} / ${result.maxPossibleScore}`);
-    doc.fontSize(15).text(`Percentage: ${result.percentage.toFixed(2)}%`);
 
+    // Format date properly
+    const examDate = result.exam.date ? new Date(result.exam.date) : new Date();
+    doc.fontSize(12).text(`Date: ${examDate.toLocaleDateString()}`);
+
+    doc.fontSize(12).text(`Duration: ${result.exam.duration || "N/A"} minutes`);
+    doc.moveDown();
+
+    // Calculate total score and percentage with proper error handling
+    let totalScore = 0;
+    let totalPossible = 0;
+
+    // Check different paths to get the scores
+    if (
+      result.quizResults &&
+      Array.isArray(result.quizResults) &&
+      result.quizResults.length > 0
+    ) {
+      // Sum up scores from all quizzes
+      result.quizResults.forEach((quizResult) => {
+        totalScore += quizResult.score || 0;
+        totalPossible += quizResult.totalPossible || 0;
+      });
+    } else if (
+      result.totalScore !== undefined &&
+      result.totalPossible !== undefined
+    ) {
+      // Use direct properties if available
+      totalScore = result.totalScore;
+      totalPossible = result.totalPossible;
+    } else if (result.answers && Array.isArray(result.answers)) {
+      // Calculate from answers if available
+      result.answers.forEach((answer) => {
+        if (answer.isCorrect) {
+          totalScore += answer.quiz?.points || answer.marks || 1;
+        }
+      });
+
+      // Estimate total possible from the exam or result
+      totalPossible = result.maxPossibleScore || result.answers.length * 1;
+    }
+
+    // Ensure we have valid numbers
+    totalScore = isNaN(totalScore) ? 0 : totalScore;
+    totalPossible =
+      isNaN(totalPossible) || totalPossible === 0 ? 1 : totalPossible;
+
+    // Calculate percentage safely
+    const percentage = Math.round((totalScore / totalPossible) * 100);
+
+    // Display score with error handling
+    doc.fontSize(15).text(`Score: ${totalScore} / ${totalPossible}`);
+    doc.fontSize(15).text(`Percentage: ${percentage}%`);
+
+    // Add feedback if available
     if (result.feedback) {
       doc.moveDown();
       doc.fontSize(15).text("Feedback:");
       doc.fontSize(12).text(result.feedback);
     }
 
-    if (result.additionalDetails) {
+    // Add additional details if available
+    if (
+      result.additionalDetails &&
+      typeof result.additionalDetails === "object"
+    ) {
       doc.moveDown();
       doc.fontSize(15).text("Additional Details:");
       for (const [key, value] of Object.entries(result.additionalDetails)) {
-        doc.fontSize(12).text(`${key}: ${value}`);
+        if (key && value) {
+          doc.fontSize(12).text(`${key}: ${value}`);
+        }
       }
     }
 
@@ -181,6 +232,15 @@ exports.generatePDF = async (req, res) => {
     // Finalize PDF
     doc.end();
 
+    // Wait for the PDF to be written to disk
+    const writeStream = fs.createWriteStream(pdfPath);
+    doc.pipe(writeStream);
+
+    await new Promise((resolve, reject) => {
+      writeStream.on("finish", resolve);
+      writeStream.on("error", reject);
+    });
+
     // Update result with PDF URL
     result.pdfGenerated = true;
     result.pdfUrl = `/pdfs/${pdfFileName}`;
@@ -191,7 +251,10 @@ exports.generatePDF = async (req, res) => {
       pdfUrl: result.pdfUrl,
     });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
+    console.error("Error generating PDF:", err);
+    res.status(500).json({
+      msg: "Error generating PDF",
+      error: err.message,
+    });
   }
 };

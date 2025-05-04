@@ -270,7 +270,7 @@ exports.submitQuiz = async (req, res) => {
           },
         ],
         totalScore: score,
-        totalPossible,
+        totalPossible: totalPossible,
       });
     } else {
       // Check if quiz already taken
@@ -293,9 +293,9 @@ exports.submitQuiz = async (req, res) => {
         completedAt: Date.now(),
       });
 
-      // Update total score
-      result.totalScore += score;
-      result.totalPossible += totalPossible;
+      // Update total score and total possible
+      result.totalScore = (result.totalScore || 0) + score;
+      result.totalPossible = (result.totalPossible || 0) + totalPossible;
     }
 
     await result.save();
