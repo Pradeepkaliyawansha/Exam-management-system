@@ -6,6 +6,7 @@ import {
   getAvailableExamsLite,
   getStudentResultsLite,
 } from "../../api/studentDashboard";
+import axios from "axios";
 
 const Dashboard = () => {
   const [upcomingExams, setUpcomingExams] = useState([]);
@@ -13,6 +14,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const { currentUser } = useContext(AuthContext);
   const { notifications } = useContext(NotificationContext);
+  const [isDownloadingTimetable, setIsDownloadingTimetable] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,6 +78,45 @@ const Dashboard = () => {
   }
 
   const unreadNotifications = notifications.filter((n) => !n.isRead);
+  // Add the download function
+
+  const downloadTimetablePDF = async () => {
+    try {
+      setIsDownloadingTimetable(true);
+      const response = await axios.get("/api/student/timetable-pdf", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        responseType: "blob", // Important for binary data
+      });
+
+      // Create a blob from the PDF stream
+      const blob = new Blob([response.data], { type: "application/pdf" });
+
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `exam-timetable-${new Date().toISOString().split("T")[0]}.pdf`
+      );
+
+      // Append to body and click
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading timetable:", error);
+      // You might want to use your notification system here
+      alert("Failed to download timetable. Please try again.");
+    } finally {
+      setIsDownloadingTimetable(false);
+    }
+  };
 
   // Rest of the component remains the same...
   return (
@@ -311,9 +352,60 @@ const Dashboard = () => {
 
       {/* Simplified Timetable Section */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Exam Timetable
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Exam Timetable
+          </h2>
+          {/* Icon-only download button */}
+          <button
+            onClick={downloadTimetablePDF}
+            disabled={isDownloadingTimetable}
+            className={`p-2 rounded-full ${
+              isDownloadingTimetable
+                ? "bg-indigo-100 cursor-not-allowed"
+                : "hover:bg-indigo-100"
+            } transition-colors`}
+            title="Download Timetable PDF"
+          >
+            {isDownloadingTimetable ? (
+              <svg
+                className="animate-spin h-5 w-5 text-indigo-500"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+            ) : (
+              <svg
+                className="w-5 h-5 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            )}
+          </button>
+        </div>
         {upcomingExams.length === 0 ? (
           <p className="text-gray-500">
             No upcoming exams to display in the timetable.

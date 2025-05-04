@@ -26,5 +26,6 @@ router.put(
   "/notifications/mark-all-read",
   studentController.markAllNotificationsAsRead
 );
+router.get("/timetable-pdf", studentController.downloadTimetablePDF);
 
 module.exports = router;

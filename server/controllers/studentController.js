@@ -2,6 +2,8 @@ const Exam = require("../models/Exam");
 const Quiz = require("../models/Quiz");
 const Result = require("../models/Result");
 const Notification = require("../models/Notification");
+const PDFDocument = require("pdfkit");
+const moment = require("moment");
 
 exports.getNotifications = async (req, res) => {
   try {
@@ -436,5 +438,124 @@ exports.markAllNotificationsAsRead = async (req, res) => {
     console.error("Error marking all notifications as read:", error.message);
     // Return success anyway to prevent UI issues
     return res.json({ success: true });
+  }
+};
+
+exports.downloadTimetablePDF = async (req, res) => {
+  try {
+    // Get student's available exams
+    const currentDate = new Date();
+    const exams = await Exam.find({
+      isActive: true,
+      date: { $gte: new Date(currentDate.setHours(0, 0, 0, 0)) },
+    })
+      .populate("coordinator", "name")
+      .sort({ date: 1 })
+      .limit(10); // Limit to next 10 exams
+
+    // Create a PDF document
+    const doc = new PDFDocument({
+      size: "A4",
+      margins: { top: 50, bottom: 50, left: 50, right: 50 },
+    });
+
+    // Set headers for PDF download
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="exam-timetable.pdf"'
+    );
+
+    // Pipe the PDF document to the response
+    doc.pipe(res);
+
+    // Add title and header
+    doc
+      .fontSize(24)
+      .font("Helvetica-Bold")
+      .text("Exam Timetable", { align: "center" });
+    doc.moveDown(0.5);
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Generated on: ${moment().format("MMMM Do YYYY, h:mm a")}`, {
+        align: "center",
+      });
+    doc.moveDown();
+
+    // Add a line separator
+    doc
+      .moveTo(50, doc.y)
+      .lineTo(doc.page.width - 50, doc.y)
+      .stroke();
+    doc.moveDown();
+
+    // Check if there are any exams
+    if (exams.length === 0) {
+      doc
+        .fontSize(14)
+        .font("Helvetica")
+        .text("No upcoming exams found.", { align: "center" });
+    } else {
+      // Add exam timetable
+      exams.forEach((exam, index) => {
+        // Add page break for every 3 exams (after the first 3)
+        if (index > 0 && index % 3 === 0) {
+          doc.addPage();
+        }
+
+        // Exam header
+        doc
+          .fontSize(16)
+          .font("Helvetica-Bold")
+          .text(`${index + 1}. ${exam.title}`);
+        doc.moveDown(0.3);
+
+        // Exam details
+        doc.fontSize(12).font("Helvetica");
+        doc.text(`Description: ${exam.description || "N/A"}`);
+        doc.text(
+          `Date & Time: ${moment(exam.date).format("MMMM Do YYYY, h:mm a")}`
+        );
+        doc.text(`Duration: ${exam.duration} minutes`);
+        doc.text(`Max Students: ${exam.maxStudents}`);
+        if (exam.coordinator) {
+          doc.text(`Coordinator: ${exam.coordinator.name}`);
+        }
+        if (exam.specialRequirements) {
+          doc.text(`Special Requirements: ${exam.specialRequirements}`);
+        }
+
+        doc.moveDown();
+
+        // Add a separator line between exams
+        if (index < exams.length - 1) {
+          doc
+            .moveTo(50, doc.y)
+            .lineTo(doc.page.width - 50, doc.y)
+            .stroke();
+          doc.moveDown();
+        }
+      });
+    }
+
+    // Add footer to each page
+    const pages = doc.bufferedPageRange().count;
+    for (let i = 0; i < pages; i++) {
+      doc.switchToPage(i);
+      doc
+        .fontSize(10)
+        .text(`Page ${i + 1} of ${pages}`, 0, doc.page.height - 50, {
+          align: "center",
+        });
+    }
+
+    // Finalize the PDF and end the stream
+    doc.end();
+  } catch (error) {
+    console.error("Error generating timetable PDF:", error);
+    res
+      .status(500)
+      .json({ msg: "Error generating timetable PDF", error: error.message });
   }
 };
