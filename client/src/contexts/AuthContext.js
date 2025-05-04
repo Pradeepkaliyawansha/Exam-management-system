@@ -12,45 +12,38 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check if user is logged in
     const checkLoggedIn = async () => {
       try {
         const token = localStorage.getItem("token");
-
-        // If no token exists, just set loading to false and return
         if (!token) {
           setLoading(false);
           return;
         }
 
-        // Configure axios for the request with better error handling
-        const config = {
+        // Log token for debugging
+        console.log("Checking token validity:", token.substring(0, 10) + "...");
+
+        const response = await axios.get(`${API_URL}/auth/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        };
+        });
 
-        // Make authenticated request to get current user
-        const response = await axios.get(`${API_URL}/auth/me`, config);
-
-        // Check if the response has the expected data structure
         if (response.data && response.data.user) {
           setCurrentUser(response.data.user);
+          console.log(
+            "User authenticated:",
+            response.data.user.email,
+            response.data.user.role
+          );
         } else {
-          // Handle case where response doesn't contain expected data
           console.error("Invalid user data format received");
           localStorage.removeItem("token");
         }
       } catch (err) {
-        // More detailed error logging
         console.error("Failed to get current user:", err.message);
-
-        // If token is invalid or expired, remove it
-        if (
-          err.response &&
-          (err.response.status === 401 || err.response.status === 403)
-        ) {
-          console.log("Removing invalid token");
+        if (err.response && err.response.status === 401) {
+          console.log("Token invalid, removing token");
           localStorage.removeItem("token");
         }
       } finally {
@@ -60,7 +53,6 @@ export const AuthProvider = ({ children }) => {
 
     checkLoggedIn();
   }, []);
-
   const handleLogin = async (email, password) => {
     setError(null);
     try {

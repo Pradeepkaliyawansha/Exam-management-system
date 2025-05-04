@@ -14,14 +14,20 @@ router.post(
     auth,
     isAdmin,
     [
-      check("title", "Title is required").not().isEmpty(),
-      check("description", "Description is required").not().isEmpty(),
-      check("date", "Date is required").not().isEmpty(),
-      check("duration", "Duration is required").isNumeric(),
-      check(
-        "maxStudents",
-        "Maximum number of students is required"
-      ).isNumeric(),
+      check("title").trim().notEmpty().withMessage("Title is required"),
+      check("description")
+        .trim()
+        .notEmpty()
+        .withMessage("Description is required"),
+      check("date").isISO8601().withMessage("Valid date is required"),
+      check("duration")
+        .isInt({ min: 1 })
+        .withMessage("Duration must be positive"),
+      check("maxStudents")
+        .isInt({ min: 1 })
+        .withMessage("Max students must be positive"),
+      check("specialRequirements").optional().trim(),
+      check("coordinator").optional().isString(),
     ],
   ],
   examController.createExam

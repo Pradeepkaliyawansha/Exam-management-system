@@ -23,6 +23,10 @@ exports.createExam = async (req, res) => {
   } = req.body;
 
   try {
+    // Log exam creation attempt
+    console.log("Creating exam with user:", req.user.id);
+    console.log("Exam data:", { title, date, duration, maxStudents });
+
     const newExam = new Exam({
       title,
       description,
@@ -34,11 +38,27 @@ exports.createExam = async (req, res) => {
       createdBy: req.user.id,
     });
 
+    // Save with error handling
     const exam = await newExam.save();
+    console.log("Exam created successfully:", exam._id);
+
     res.json(exam);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
+    console.error("Error creating exam:", err.message);
+    console.error("Error stack:", err.stack);
+
+    // Handle specific errors
+    if (err.name === "ValidationError") {
+      return res.status(400).json({
+        msg: "Validation error",
+        errors: Object.values(err.errors).map((e) => e.message),
+      });
+    }
+
+    res.status(500).json({
+      msg: "Server error while creating exam",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
   }
 };
 

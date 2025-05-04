@@ -1,8 +1,6 @@
 const jwt = require("jsonwebtoken");
 
 module.exports = function (req, res, next) {
-  // Get token from header
-  // Check both Authorization formats: "Bearer token" and "x-auth-token"
   const bearerHeader = req.header("Authorization");
   const xAuthToken = req.header("x-auth-token");
 
@@ -14,9 +12,8 @@ module.exports = function (req, res, next) {
     token = xAuthToken;
   }
 
-  // Check if no token
   if (!token) {
-    console.log("❌ No auth token provided in request");
+    console.log(`❌ No auth token provided for ${req.method} ${req.path}`);
     return res.status(401).json({
       success: false,
       msg: "No token, authorization denied",
@@ -24,13 +21,9 @@ module.exports = function (req, res, next) {
   }
 
   try {
-    // Get the JWT secret from environment variables or use default
     const jwtSecret = process.env.JWT_SECRET || "exam_management_secret_token";
-
-    // Verify token
     const decoded = jwt.verify(token, jwtSecret);
 
-    // Add only essential user info to request object
     req.user = {
       id: decoded.id,
       role: decoded.role,
@@ -41,9 +34,11 @@ module.exports = function (req, res, next) {
     );
     next();
   } catch (err) {
-    console.error("Token verification error:", err.message);
+    console.error(
+      `Token verification error for ${req.method} ${req.path}:`,
+      err.message
+    );
 
-    // Provide more specific error message based on the error
     if (err.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,

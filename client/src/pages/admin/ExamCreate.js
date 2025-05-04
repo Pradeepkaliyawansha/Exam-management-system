@@ -13,12 +13,20 @@ const ExamCreate = () => {
       setIsSubmitting(true);
       setError(null);
 
+      console.log("Submitting exam data:", formData);
+      console.log("Auth token:", localStorage.getItem("token"));
+
       const newExam = await createExam(formData);
+      console.log("Exam created successfully:", newExam);
       navigate(`/admin/exams/${newExam._id}`);
     } catch (error) {
       console.error("Error creating exam:", error);
+      console.error("Error response:", error.response);
+      console.error("Error request:", error.request);
+
       setError(
         error.response?.data?.msg ||
+          error.response?.data?.message ||
           "Failed to create exam. Please try again later."
       );
       setIsSubmitting(false);
