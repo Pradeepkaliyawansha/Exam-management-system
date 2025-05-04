@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { getStudentExamById, startExam } from "../../api/exams";
 
 const ExamDetail = () => {
@@ -405,6 +405,43 @@ const ExamDetail = () => {
           ) : null}
         </div>
       </div>
+
+      {/* Available Quizzes Section - INSERT THIS SECTION AFTER THE EXAM DETAILS CARD */}
+      {isExamAvailable() && quizzes.length > 0 && !examTaken && (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 bg-indigo-50 border-b border-indigo-100">
+            <h3 className="text-lg font-medium text-indigo-900">
+              Available Quizzes
+            </h3>
+          </div>
+          <div className="px-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {quizzes.map((quiz) => (
+                <div
+                  key={quiz._id}
+                  className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <h4 className="text-lg font-semibold text-gray-800">
+                    {quiz.title}
+                  </h4>
+                  <p className="text-gray-600 mt-1">{quiz.description}</p>
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="text-sm text-gray-500">
+                      Time: {quiz.timeLimit} minutes
+                    </span>
+                    <Link
+                      to={`/student/exams/${examId}/quizzes/${quiz._id}`}
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Start Quiz
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirm Start Exam Modal */}
       {showConfirmModal && (

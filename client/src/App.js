@@ -26,8 +26,12 @@ import ExamEdit from "./pages/admin/ExamEdit";
 import StudentDashboard from "./pages/student/Dashboard";
 import ExamList from "./pages/student/ExamList";
 import ExamDetail from "./pages/student/ExamDetail";
-import TakeExam from "./pages/student/TakeExam";
 import ResultDetail from "./pages/student/ResultDetails";
+
+import QuizCreate from "./pages/admin/QuizCreate";
+import QuizEdit from "./pages/admin/QuizEdit";
+import QuizManagement from "./pages/admin/QuizManagement";
+import TakeQuiz from "./pages/student/TakeQuiz";
 
 // Home Page
 import Home from "./pages/Home";
@@ -74,11 +78,20 @@ function App() {
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="exams" element={<ExamList />} />
               <Route path="exams/:examId" element={<ExamDetail />} />
-              <Route path="take-exam/:examId" element={<TakeExam />} />
               <Route path="results/:resultId" element={<ResultDetail />} />
             </Route>
             {/* Fallback redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="exams/:examId/quizzes" element={<QuizManagement />} />
+            <Route
+              path="exams/:examId/quizzes/create"
+              element={<QuizCreate />}
+            />
+            <Route path="quizzes/:quizId/edit" element={<QuizEdit />} />
+            <Route
+              path="exams/:examId/quizzes/:quizId"
+              element={<TakeQuiz />}
+            />
           </Routes>
         </NotificationProvider>
       </AuthProvider>

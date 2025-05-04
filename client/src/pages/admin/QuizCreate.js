@@ -57,7 +57,6 @@ const QuizCreate = () => {
       )}
 
       <QuizForm
-        examId={examId}
         onSubmit={handleCreateQuiz}
         buttonText="Create Quiz"
         isLoading={isSubmitting}
