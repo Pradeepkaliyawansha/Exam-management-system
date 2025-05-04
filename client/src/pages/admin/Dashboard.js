@@ -1,5 +1,7 @@
+// client/src/pages/admin/Dashboard.js
+
 import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getAllExams } from "../../api/exams";
 import { getExamResults } from "../../api/results";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -15,6 +17,7 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const { currentUser } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -36,11 +39,26 @@ const Dashboard = () => {
         };
         setExamStats(stats);
 
-        // Get all recent results from the first exam (just for dashboard display)
-        if (examsData.length > 0) {
-          const recentExamResults = await getExamResults(examsData[0]._id);
-          setRecentResults(recentExamResults.slice(0, 5)); // Get only 5 most recent
+        // Get all recent results from all exams
+        let allResults = [];
+        for (const exam of examsData) {
+          try {
+            const examResults = await getExamResults(exam._id);
+            allResults = [...allResults, ...examResults];
+          } catch (error) {
+            console.error(
+              `Error fetching results for exam ${exam._id}:`,
+              error
+            );
+          }
         }
+
+        // Sort by submission date and get the 5 most recent
+        setRecentResults(
+          allResults
+            .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+            .slice(0, 5)
+        );
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -310,12 +328,12 @@ const Dashboard = () => {
             <h2 className="text-lg font-medium text-gray-800">
               Recent Results
             </h2>
-            <Link
-              to="/admin/results"
+            <button
+              onClick={() => navigate("/admin/exams")}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
             >
-              View All
-            </Link>
+              View All Results
+            </button>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -412,7 +430,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - UPDATED */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-medium text-gray-800 mb-4">
           Quick Actions
@@ -424,18 +442,23 @@ const Dashboard = () => {
           >
             Create New Exam
           </Link>
+
+          {/* Removed Create New Quiz button */}
+
           <Link
-            to="/admin/quizzes/create"
-            className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md text-center"
-          >
-            Create New Quiz
-          </Link>
-          <Link
-            to="/admin/results"
+            to="/admin/exams"
             className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-md text-center"
           >
-            View All Results
+            Manage Exams
           </Link>
+
+          {/* Fixed View All Results button */}
+          <button
+            onClick={() => navigate("/admin/exams")}
+            className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md text-center"
+          >
+            View Exam Results
+          </button>
         </div>
       </div>
     </div>

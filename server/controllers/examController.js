@@ -216,13 +216,13 @@ exports.deleteExam = async (req, res) => {
     }
 
     // Delete all quizzes associated with this exam
-    await Quiz.deleteMany({ exam: req.params.id });
+    await Quiz.deleteMany({ examId: req.params.id });
 
     // Delete all results associated with this exam
     await Result.deleteMany({ exam: req.params.id });
 
-    // Delete the exam
-    await exam.remove();
+    // Delete the exam - use deleteOne() instead of remove()
+    await exam.deleteOne();
 
     res.json({ msg: "Exam removed" });
   } catch (err) {

@@ -35,12 +35,24 @@ const QuizManagement = () => {
 
   const handleDeleteQuiz = async (quizId) => {
     try {
-      await deleteQuiz(quizId);
+      const response = await deleteQuiz(quizId);
       setQuizzes(quizzes.filter((quiz) => quiz._id !== quizId));
       setConfirmDelete(null);
     } catch (error) {
       console.error("Error deleting quiz:", error);
-      setError("Failed to delete quiz. Please try again later.");
+
+      // Show more detailed error
+      if (error.response) {
+        const statusCode = error.response.status;
+        const errorMessage =
+          error.response.data?.msg || "Failed to delete quiz";
+
+        setError(`Error ${statusCode}: ${errorMessage}`);
+      } else if (error.request) {
+        setError("No response from server. Please check your connection.");
+      } else {
+        setError(`Error: ${error.message}`);
+      }
     }
   };
 

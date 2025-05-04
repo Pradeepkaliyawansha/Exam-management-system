@@ -85,6 +85,7 @@ export const deleteQuiz = async (quizId) => {
     const response = await api.delete(`/admin/quizzes/${quizId}`);
     return response.data;
   } catch (error) {
+    console.error("Error deleting quiz:", error);
     throw error;
   }
 };

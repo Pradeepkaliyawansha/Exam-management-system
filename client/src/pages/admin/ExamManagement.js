@@ -43,12 +43,28 @@ const ExamManagement = () => {
   // Delete exam handler
   const handleDeleteExam = async (examId) => {
     try {
-      await deleteExam(examId);
+      // Add error handler to deleteExam API call
+      const response = await deleteExam(examId);
       setExams(exams.filter((exam) => exam._id !== examId));
       setConfirmDelete(null);
     } catch (error) {
       console.error("Error deleting exam:", error);
-      setError("Failed to delete exam. Please try again later.");
+
+      // Show more detailed error
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        const statusCode = error.response.status;
+        const errorMessage =
+          error.response.data?.msg || "Failed to delete exam";
+
+        setError(`Error ${statusCode}: ${errorMessage}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        setError("No response from server. Please check your connection.");
+      } else {
+        // Something happened in setting up the request
+        setError(`Error: ${error.message}`);
+      }
     }
   };
 

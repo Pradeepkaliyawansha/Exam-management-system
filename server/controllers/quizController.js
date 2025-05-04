@@ -158,7 +158,8 @@ exports.deleteQuiz = async (req, res) => {
       await exam.save();
     }
 
-    await quiz.remove();
+    // Use deleteOne() instead of remove()
+    await quiz.deleteOne();
 
     res.json({ msg: "Quiz removed" });
   } catch (err) {
