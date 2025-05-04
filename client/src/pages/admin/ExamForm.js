@@ -91,7 +91,15 @@ const ExamForm = ({
     e.preventDefault();
 
     if (validate()) {
-      onSubmit(formData);
+      // Create a copy of formData to modify before sending
+      const submitData = { ...formData };
+
+      // If coordinator is empty or not a valid ObjectId, remove it
+      if (!submitData.coordinator || submitData.coordinator.trim() === "") {
+        delete submitData.coordinator;
+      }
+
+      onSubmit(submitData);
     }
   };
 
@@ -239,10 +247,11 @@ const ExamForm = ({
                   value={formData.coordinator}
                   onChange={handleChange}
                   className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                  placeholder="Coordinator ID"
+                  placeholder="Coordinator ID (optional)"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Enter the ID of the coordinator (admin user).
+                  Leave empty if no coordinator is assigned. Enter a valid
+                  ObjectId for an existing admin user.
                 </p>
               </div>
 
