@@ -15,11 +15,12 @@ router.post("/exams", examController.createExam);
 router.put("/exams/:id", examController.updateExam);
 router.delete("/exams/:id", examController.deleteExam);
 
-// Quiz routes
+// Quiz routes - Correctly mapped to quizController
 router.get("/exams/:examId/quizzes", quizController.getQuizzesByExam);
 router.get("/quizzes/:id", quizController.getQuizById);
 router.post("/exams/:examId/quizzes", quizController.createQuiz);
 router.put("/quizzes/:id", quizController.updateQuiz);
 router.delete("/quizzes/:id", quizController.deleteQuiz);
+router.get("/exams/:examId/quiz-summary", quizController.getQuizSummary);
 
 module.exports = router;

@@ -5,38 +5,46 @@ const quizController = require("../controllers/quizController");
 const auth = require("../middleware/auth");
 const { isAdmin } = require("../middleware/roleCheck");
 
-// @route   POST api/quizzes
-// @desc    Create a new quiz
-// @access  Private (Admin only)
+// @route   POST api/admin/exams/:examId/quizzes
+// @desc    Create a new quiz for an exam
+// @access  Private/Admin
 router.post(
-  "/",
+  "/:examId/quizzes",
   [
     auth,
     isAdmin,
     [
       check("title", "Title is required").not().isEmpty(),
-      check("question", "Question is required").not().isEmpty(),
-      check("options", "Options are required").isArray({ min: 2 }),
-      check("correctAnswer", "Correct answer is required").isNumeric(),
-      check("examId", "Exam ID is required").not().isEmpty(),
+      check("description", "Description is required").not().isEmpty(),
+      check("questions", "Questions are required").isArray({ min: 1 }),
+      check("questions.*.question", "Question text is required")
+        .not()
+        .isEmpty(),
+      check("questions.*.options", "Options are required").isArray({ min: 4 }),
+      check("questions.*.marks", "Marks are required").isInt({ min: 1 }),
+      check("timeLimit", "Time limit is required").isInt({ min: 1 }),
     ],
   ],
   quizController.createQuiz
 );
 
-// @route   GET api/quizzes/exam/:examId
+// @route   GET api/admin/exams/:examId/quizzes
 // @desc    Get all quizzes for an exam
-// @access  Private (Admin only)
-router.get("/exam/:examId", [auth, isAdmin], quizController.getQuizzesByExam);
+// @access  Private/Admin
+router.get(
+  "/:examId/quizzes",
+  [auth, isAdmin],
+  quizController.getQuizzesByExam
+);
 
-// @route   GET api/quizzes/:id
+// @route   GET api/admin/quizzes/:id
 // @desc    Get quiz by ID
-// @access  Private (Admin only)
+// @access  Private/Admin
 router.get("/:id", [auth, isAdmin], quizController.getQuizById);
 
-// @route   PUT api/quizzes/:id
+// @route   PUT api/admin/quizzes/:id
 // @desc    Update a quiz
-// @access  Private (Admin only)
+// @access  Private/Admin
 router.put(
   "/:id",
   [
@@ -44,19 +52,28 @@ router.put(
     isAdmin,
     [
       check("title", "Title is required").optional(),
-      check("question", "Question is required").optional(),
-      check("options", "Options are required").optional().isArray({ min: 2 }),
-      check("correctAnswer", "Correct answer is required")
+      check("description", "Description is required").optional(),
+      check("questions", "Questions are required")
         .optional()
-        .isNumeric(),
+        .isArray({ min: 1 }),
+      check("timeLimit", "Time limit is required").optional().isInt({ min: 1 }),
     ],
   ],
   quizController.updateQuiz
 );
 
-// @route   DELETE api/quizzes/:id
+// @route   DELETE api/admin/quizzes/:id
 // @desc    Delete a quiz
-// @access  Private (Admin only)
+// @access  Private/Admin
 router.delete("/:id", [auth, isAdmin], quizController.deleteQuiz);
+
+// @route   GET api/admin/exams/:examId/quiz-summary
+// @desc    Get quiz summary for an exam
+// @access  Private/Admin
+router.get(
+  "/:examId/quiz-summary",
+  [auth, isAdmin],
+  quizController.getQuizSummary
+);
 
 module.exports = router;

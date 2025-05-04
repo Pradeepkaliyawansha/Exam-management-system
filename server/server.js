@@ -102,7 +102,6 @@ try {
 
   app.use("/api/auth", require("./routes/authRoutes"));
   app.use("/api/exams", require("./routes/examRoutes"));
-  app.use("/api/quizzes", require("./routes/quizRoutes"));
   app.use("/api/results", require("./routes/resultRoutes"));
   app.use("/api/student", require("./routes/studentRoutes"));
   app.use("/api/admin", require("./routes/adminRoutes"));
