@@ -3,6 +3,7 @@ const connectDB = require("./config/db");
 const cors = require("cors");
 const path = require("path");
 const errorHandler = require("./middleware/error");
+const headerSizeHandler = require("./middleware/headerSizeHandler");
 
 // Load environment variables
 require("dotenv").config();
@@ -10,31 +11,13 @@ require("dotenv").config();
 // Initialize express
 const app = express();
 
-// Add a middleware to handle large headers with increased limit
-app.use((req, res, next) => {
-  // Get combined header size
-  const headers = req.headers;
-  const headerSize = JSON.stringify(headers).length;
-
-  // Increased header size limit to 16KB (from 8KB)
-  if (headerSize > 16384) {
-    console.warn(
-      `Request with large headers (${headerSize} bytes) from ${req.ip}`
-    );
-    // Return 431 with helpful message
-    return res.status(431).json({
-      error: "Request Header Fields Too Large",
-      message: "Please reduce the size of your request headers",
-    });
-  }
-  next();
-});
+// Apply custom header size handler middleware
+app.use(headerSizeHandler);
 
 // Debug middleware to log request details
 app.use((req, res, next) => {
   console.log(`🔍 ${new Date().toISOString()} - ${req.method} ${req.path}`);
   console.log(`🌐 Client IP: ${req.ip}`);
-  console.log(`📏 Header size: ${JSON.stringify(req.headers).length} bytes`);
   next();
 });
 

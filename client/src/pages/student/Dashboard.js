@@ -1,32 +1,11 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
-import { getAvailableExams } from "../../api/exams";
-import { getStudentResults } from "../../api/results";
 import { AuthContext } from "../../contexts/AuthContext";
 import { NotificationContext } from "../../contexts/NotificationContext";
-
-// Create a simplified axios instance just for the dashboard
-import axios from "axios";
-const dashboardAxios = axios.create({
-  timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-    // Only include essential headers
-  },
-});
-
-// Add an interceptor specifically for 431 errors
-dashboardAxios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 431) {
-      console.warn("Request header too large, returning empty data");
-      // Return empty data instead of rejecting
-      return { data: [] };
-    }
-    return Promise.reject(error);
-  }
-);
+import {
+  getAvailableExamsLite,
+  getStudentResultsLite,
+} from "../../api/studentDashboard";
 
 const Dashboard = () => {
   const [upcomingExams, setUpcomingExams] = useState([]);
@@ -42,38 +21,19 @@ const Dashboard = () => {
 
         // Use separate try/catch blocks to ensure one failure doesn't affect the other
         try {
-          // Get auth token from localStorage
-          const token = localStorage.getItem("token");
-
-          // Fetch exams with minimal headers
-          const examsResponse = await dashboardAxios.get("/api/student/exams", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          setUpcomingExams(examsResponse.data || []);
+          // Use the optimized API function
+          const examsData = await getAvailableExamsLite();
+          setUpcomingExams(examsData || []);
         } catch (examError) {
           console.error("Error fetching exams:", examError.message);
           setUpcomingExams([]);
         }
 
         try {
-          // Get auth token from localStorage
-          const token = localStorage.getItem("token");
-
-          // Fetch results with minimal headers
-          const resultsResponse = await dashboardAxios.get(
-            "/api/results/student",
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
+          // Use the optimized API function
+          const resultsData = await getStudentResultsLite();
           // Get only the 3 most recent results
-          setRecentResults((resultsResponse.data || []).slice(0, 3));
+          setRecentResults((resultsData || []).slice(0, 3));
         } catch (resultError) {
           console.error("Error fetching results:", resultError.message);
           setRecentResults([]);
@@ -117,6 +77,7 @@ const Dashboard = () => {
 
   const unreadNotifications = notifications.filter((n) => !n.isRead);
 
+  // Rest of the component remains the same...
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
