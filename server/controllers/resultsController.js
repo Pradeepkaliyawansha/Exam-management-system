@@ -16,8 +16,12 @@ exports.getStudentResults = async (req, res) => {
 
     res.json(results);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
+    console.error("Error in getStudentResults:", err.message);
+    console.error(err.stack);
+    res.status(500).json({
+      error: "Server error while fetching student results",
+      details: err.message,
+    });
   }
 };
 
@@ -169,11 +173,9 @@ exports.generatePDF = async (req, res) => {
     }
 
     doc.moveDown().moveDown();
-    doc
-      .fontSize(12)
-      .text("This certificate was automatically generated.", {
-        align: "center",
-      });
+    doc.fontSize(12).text("This certificate was automatically generated.", {
+      align: "center",
+    });
     doc.fontSize(12).text(new Date().toLocaleDateString(), { align: "center" });
 
     // Finalize PDF

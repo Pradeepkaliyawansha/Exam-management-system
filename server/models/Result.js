@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
 const ResultSchema = new mongoose.Schema({
-  studentId: {
+  student: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
-  examId: {
+  exam: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Exam",
     required: true,
@@ -51,3 +51,5 @@ const ResultSchema = new mongoose.Schema({
     type: Object, // For storing any additional details entered by student
   },
 });
+
+module.exports = mongoose.model("Result", ResultSchema);

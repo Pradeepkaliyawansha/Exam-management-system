@@ -5,7 +5,8 @@ import { useNotification } from "../../contexts/NotificationContext";
 
 const Header = () => {
   const { currentUser, logout } = useContext(AuthContext);
-  const { notifications, loading, error, unreadCount } = useNotification();
+  const { notifications, loading, error, unreadCount, markAsRead } =
+    useNotification();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const navigate = useNavigate();
@@ -17,6 +18,20 @@ const Header = () => {
 
   // Only display a limited number of notifications to avoid large UI renders
   const displayedNotifications = notifications.slice(0, 5);
+
+  const handleNotificationClick = async (notification) => {
+    if (!notification.isRead) {
+      await markAsRead(notification.id);
+    }
+
+    // Navigate to exam details if the notification is about an exam
+    if (notification.type === "exam") {
+      // Extract exam ID from the message if possible
+      // This would need to be improved based on how you want to link notifications to exams
+      setShowNotifications(false);
+      navigate(`/student/exams`);
+    }
+  };
 
   return (
     <header className="bg-white shadow-sm z-10">
@@ -64,7 +79,7 @@ const Header = () => {
                       aria-orientation="vertical"
                     >
                       <div className="px-4 py-2 text-sm text-gray-700 font-semibold border-b flex justify-between items-center">
-                        <span>Notifications</span>
+                        <span>Notifications ({unreadCount})</span>
                         {loading && (
                           <div className="animate-spin h-4 w-4 border-2 border-indigo-500 rounded-full border-t-transparent"></div>
                         )}
@@ -76,17 +91,20 @@ const Header = () => {
                           </div>
                         ) : displayedNotifications.length === 0 ? (
                           <div className="px-4 py-2 text-sm text-gray-500">
-                            No notifications
+                            No unread notifications
                           </div>
                         ) : (
                           displayedNotifications.map((notification) => (
                             <div
                               key={notification._id || notification.id}
-                              className={`px-4 py-2 text-sm ${
-                                notification.isRead
-                                  ? "text-gray-500"
-                                  : "text-gray-900 font-semibold bg-blue-50"
-                              }`}
+                              onClick={() =>
+                                handleNotificationClick(notification)
+                              }
+                              className={`px-4 py-2 text-sm cursor-pointer hover:bg-gray-50 ${
+                                notification.type === "exam"
+                                  ? "text-blue-900 bg-blue-50"
+                                  : "text-gray-900"
+                              } font-semibold`}
                             >
                               <p>{notification.message}</p>
                               <p className="text-xs text-gray-500 mt-1">
@@ -98,20 +116,6 @@ const Header = () => {
                               </p>
                             </div>
                           ))
-                        )}
-                        {notifications.length > 5 && (
-                          <div className="px-4 py-2 text-center">
-                            <button
-                              className="text-sm text-indigo-600 hover:text-indigo-800"
-                              onClick={() => {
-                                // Close dropdown and navigate to full notification page if available
-                                setShowNotifications(false);
-                                // You can add navigation here if you have a dedicated notifications page
-                              }}
-                            >
-                              View all notifications
-                            </button>
-                          </div>
                         )}
                       </div>
                     </div>

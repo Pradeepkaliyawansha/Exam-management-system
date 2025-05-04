@@ -1,6 +1,8 @@
 const Exam = require("../models/Exam");
 const Quiz = require("../models/Quiz");
 const Result = require("../models/Result");
+const Notification = require("../models/Notification");
+const User = require("../models/User");
 const { validationResult } = require("express-validator");
 
 // @route   POST api/exams
@@ -41,6 +43,22 @@ exports.createExam = async (req, res) => {
     // Save with error handling
     const exam = await newExam.save();
     console.log("Exam created successfully:", exam._id);
+
+    // Create notifications for all students
+    const students = await User.find({ role: "student" });
+
+    const notificationPromises = students.map((student) => {
+      const notification = new Notification({
+        userId: student._id,
+        message: `New exam available: ${title}`,
+        type: "exam",
+        isRead: false,
+      });
+      return notification.save();
+    });
+
+    await Promise.all(notificationPromises);
+    console.log(`Created notification for ${students.length} students`);
 
     res.json(exam);
   } catch (err) {

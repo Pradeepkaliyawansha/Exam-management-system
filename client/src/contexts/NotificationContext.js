@@ -84,8 +84,8 @@ export const NotificationProvider = ({ children }) => {
       fetchNotifications();
 
       // Set up polling with progressively longer intervals
-      // Start with 1 minute, but don't go below this
-      const POLL_INTERVAL = 60000; // 1 minute
+      // Check for new notifications every 2 minutes
+      const POLL_INTERVAL = 120000; // 2 minutes
 
       const interval = setInterval(fetchNotifications, POLL_INTERVAL);
       return () => clearInterval(interval);
@@ -126,22 +126,10 @@ export const NotificationProvider = ({ children }) => {
       await markNotificationAsRead(notificationId);
 
       setNotifications((prev) =>
-        prev.map((notification) =>
-          notification._id === notificationId
-            ? { ...notification, isRead: true }
-            : notification
-        )
+        prev.filter((notification) => notification._id !== notificationId)
       );
     } catch (error) {
       console.error("Failed to mark notification as read:", error.message);
-      // Still update UI even if API fails
-      setNotifications((prev) =>
-        prev.map((notification) =>
-          notification._id === notificationId
-            ? { ...notification, isRead: true }
-            : notification
-        )
-      );
     }
   };
 
@@ -149,21 +137,9 @@ export const NotificationProvider = ({ children }) => {
     try {
       await markAllNotificationsAsRead();
 
-      setNotifications((prev) =>
-        prev.map((notification) => ({
-          ...notification,
-          isRead: true,
-        }))
-      );
+      setNotifications([]);
     } catch (error) {
       console.error("Failed to mark all notifications as read:", error.message);
-      // Still update UI even if API fails
-      setNotifications((prev) =>
-        prev.map((notification) => ({
-          ...notification,
-          isRead: true,
-        }))
-      );
     }
   };
 
