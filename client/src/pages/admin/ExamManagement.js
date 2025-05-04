@@ -325,12 +325,6 @@ const ExamManagement = () => {
                           Quizzes
                         </Link>
                         <Link
-                          to={`/admin/exams/${exam._id}`}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4"
-                        >
-                          View
-                        </Link>
-                        <Link
                           to={`/admin/exams/${exam._id}/edit`}
                           className="text-indigo-600 hover:text-indigo-900 mr-4"
                         >

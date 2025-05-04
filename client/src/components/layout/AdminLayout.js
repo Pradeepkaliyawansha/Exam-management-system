@@ -24,7 +24,6 @@ const AdminLayout = () => {
   const adminNavItems = [
     { label: "Dashboard", path: "/admin/dashboard", icon: "dashboard" },
     { label: "Exam Management", path: "/admin/exams", icon: "exam" },
-    { label: "Quiz Management", path: "/admin/quizzes", icon: "quiz" },
     { label: "Results", path: "/admin/results", icon: "results" },
   ];
 

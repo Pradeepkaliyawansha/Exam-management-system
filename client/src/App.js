@@ -14,23 +14,22 @@ import StudentLayout from "./components/layout/StudentLayout";
 
 // Auth Pages
 import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register"; // Import the Register component
+import Register from "./pages/auth/Register";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/Dashboard";
 import ExamManagement from "./pages/admin/ExamManagement";
 import ExamCreate from "./pages/admin/ExamCreate";
 import ExamEdit from "./pages/admin/ExamEdit";
+import QuizCreate from "./pages/admin/QuizCreate";
+import QuizEdit from "./pages/admin/QuizEdit";
+import QuizManagement from "./pages/admin/QuizManagement";
 
 // Student Pages
 import StudentDashboard from "./pages/student/Dashboard";
 import ExamList from "./pages/student/ExamList";
 import ExamDetail from "./pages/student/ExamDetail";
 import ResultDetail from "./pages/student/ResultDetails";
-
-import QuizCreate from "./pages/admin/QuizCreate";
-import QuizEdit from "./pages/admin/QuizEdit";
-import QuizManagement from "./pages/admin/QuizManagement";
 import TakeQuiz from "./pages/student/TakeQuiz";
 
 // Home Page
@@ -45,8 +44,8 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />{" "}
-            {/* Add Register route */}
+            <Route path="/register" element={<Register />} />
+
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route
@@ -56,19 +55,19 @@ function App() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="exams" element={<ExamManagement />} />
               <Route path="exams/create" element={<ExamCreate />} />
-              <Route path="exams/:examId" element={<AdminDashboard />} />
               <Route path="exams/:examId/edit" element={<ExamEdit />} />
               <Route
                 path="exams/:examId/quizzes"
-                element={<ExamManagement />}
+                element={<QuizManagement />}
               />
               <Route
                 path="exams/:examId/quizzes/create"
-                element={<ExamCreate />}
+                element={<QuizCreate />}
               />
-              <Route path="quizzes/:quizId/edit" element={<ExamEdit />} />
+              <Route path="quizzes/:quizId/edit" element={<QuizEdit />} />
               <Route path="results/:resultId" element={<ResultDetail />} />
             </Route>
+
             {/* Student Routes */}
             <Route path="/student" element={<StudentLayout />}>
               <Route
@@ -79,19 +78,14 @@ function App() {
               <Route path="exams" element={<ExamList />} />
               <Route path="exams/:examId" element={<ExamDetail />} />
               <Route path="results/:resultId" element={<ResultDetail />} />
+              <Route
+                path="exams/:examId/quizzes/:quizId"
+                element={<TakeQuiz />}
+              />
             </Route>
+
             {/* Fallback redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
-            <Route path="exams/:examId/quizzes" element={<QuizManagement />} />
-            <Route
-              path="exams/:examId/quizzes/create"
-              element={<QuizCreate />}
-            />
-            <Route path="quizzes/:quizId/edit" element={<QuizEdit />} />
-            <Route
-              path="exams/:examId/quizzes/:quizId"
-              element={<TakeQuiz />}
-            />
           </Routes>
         </NotificationProvider>
       </AuthProvider>
