@@ -10,9 +10,24 @@ const notificationAxios = axios.create({
     // Don't include other headers
   },
   timeout: 5000, // 5 second timeout
+  withCredentials: false,
+  maxRedirects: 0,
 });
 
 // Add a response interceptor to handle 431 errors specifically
+notificationAxios.interceptors.request.use(
+  (config) => {
+    // Get token and only add if it exists
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Use simpler header format
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 notificationAxios.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -30,8 +30,12 @@ module.exports = function (req, res, next) {
     // Verify token
     const decoded = jwt.verify(token, jwtSecret);
 
-    // Add user from payload to request object
-    req.user = decoded;
+    // Add only essential user info to request object
+    req.user = {
+      id: decoded.id,
+      role: decoded.role,
+    };
+
     console.log(
       `✅ Authenticated user: ${req.user.id}, role: ${req.user.role}`
     );

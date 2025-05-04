@@ -4,12 +4,21 @@ const cors = require("cors");
 const path = require("path");
 const errorHandler = require("./middleware/error");
 const headerSizeHandler = require("./middleware/headerSizeHandler");
+const mongoose = require("mongoose");
 
 // Load environment variables
 require("dotenv").config();
 
 // Initialize express
 const app = express();
+
+// Set up custom HTTP server options to increase header size limit
+const http = require("http");
+const server = http.createServer(app);
+
+// Increase header size limit
+server.maxHeadersCount = 0; // No limit on number of headers
+server.maxHeaderSize = 2000000; // 2MB header size limit (increased from default 8KB)
 
 // Apply custom header size handler middleware
 app.use(headerSizeHandler);
@@ -130,7 +139,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(
     `⚡️ Server running on port ${PORT} in ${
       process.env.NODE_ENV || "development"
@@ -148,4 +157,4 @@ process.on("SIGTERM", () => {
   });
 });
 
-module.exports = app; // For testing purposes
+module.exports = server; // For testing purposes

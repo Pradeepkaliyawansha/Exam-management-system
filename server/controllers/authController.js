@@ -3,9 +3,10 @@ const { validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-// Helper function to generate JWT token
+// Helper function to generate JWT token with minimal payload
 const generateToken = (user) => {
   try {
+    // Minimal payload to reduce token size
     const payload = {
       id: user.id,
       role: user.role,

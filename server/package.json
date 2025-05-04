@@ -4,7 +4,7 @@
   "description": "Exam Management System backend",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js",
+    "start": "cross-env NODE_OPTIONS='--max-http-header-size=65536' nodemon server.js",
     "client": "npm start --prefix ../client",
     "clientinstall": "npm install --prefix ../client",
     "both": "concurrently \"npm run dev\" \"npm run client\""
@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "concurrently": "^8.0.1",
+    "cross-env": "^7.0.3",
     "nodemon": "^2.0.22"
   }
 }

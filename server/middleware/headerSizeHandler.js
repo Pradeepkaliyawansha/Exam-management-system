@@ -5,9 +5,14 @@
 const headerSizeHandler = (req, res, next) => {
   // Get combined header size
   const headers = req.headers;
-  const headerSize = JSON.stringify(headers).length;
+  let headerSize = 0;
 
-  // Log header size for monitoring
+  // Calculate actual header size in bytes
+  Object.entries(headers).forEach(([key, value]) => {
+    headerSize += Buffer.byteLength(key + ": " + value + "\r\n");
+  });
+
+  // Log large header requests for monitoring
   if (headerSize > 8000) {
     console.warn(
       `Large header request (${headerSize} bytes) from ${req.ip} to ${req.path}`
@@ -23,7 +28,8 @@ const headerSizeHandler = (req, res, next) => {
     // For student dashboard endpoints, return empty data to prevent errors
     if (
       req.path === "/api/student/exams" ||
-      req.path === "/api/results/student"
+      req.path === "/api/results/student" ||
+      req.path === "/api/student/notifications"
     ) {
       console.log(
         "Returning empty array for dashboard endpoint due to header size"
@@ -37,6 +43,8 @@ const headerSizeHandler = (req, res, next) => {
       message: "Request Header Fields Too Large",
       suggestion:
         "Try reducing authorization token size or simplifying request headers",
+      headerSize: headerSize,
+      maxSize: 16384,
     });
   }
 
