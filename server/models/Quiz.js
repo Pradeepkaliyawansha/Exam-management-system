@@ -1,4 +1,3 @@
-// server/models/Quiz.js
 const mongoose = require("mongoose");
 
 const OptionSchema = new mongoose.Schema({
@@ -9,6 +8,7 @@ const OptionSchema = new mongoose.Schema({
   isCorrect: {
     type: Boolean,
     default: false,
+    required: true,
   },
 });
 
@@ -17,7 +17,17 @@ const QuestionSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  options: [OptionSchema],
+  options: {
+    type: [OptionSchema],
+    required: true,
+    validate: {
+      validator: function (options) {
+        // Must have 4 options
+        return options && options.length === 4;
+      },
+      message: "Each question must have exactly 4 options",
+    },
+  },
   marks: {
     type: Number,
     default: 1,
@@ -51,6 +61,7 @@ const QuizSchema = new mongoose.Schema({
   },
   questions: {
     type: [QuestionSchema],
+    required: true,
     validate: {
       validator: function (questions) {
         return questions && questions.length > 0;
@@ -60,7 +71,7 @@ const QuizSchema = new mongoose.Schema({
   },
   timeLimit: {
     type: Number, // in minutes
-    default: 5,
+    default: 10,
     required: true,
   },
   createdBy: {

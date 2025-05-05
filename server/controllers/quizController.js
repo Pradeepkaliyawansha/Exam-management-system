@@ -67,13 +67,43 @@ exports.createQuiz = async (req, res) => {
       return res.status(404).json({ msg: "Exam not found" });
     }
 
+    // Validate and format questions
+    const formattedQuestions = questions.map((question, index) => {
+      // Ensure each question has exactly 4 options
+      if (!question.options || question.options.length !== 4) {
+        throw new Error(`Question ${index + 1} must have exactly 4 options`);
+      }
+
+      // Ensure each option has the correct structure
+      const formattedOptions = question.options.map((option) => ({
+        text: option.text.trim(),
+        isCorrect: Boolean(option.isCorrect),
+      }));
+
+      // Validate that exactly one option is correct
+      const correctCount = formattedOptions.filter(
+        (opt) => opt.isCorrect
+      ).length;
+      if (correctCount !== 1) {
+        throw new Error(
+          `Question ${index + 1} must have exactly one correct answer`
+        );
+      }
+
+      return {
+        question: question.question.trim(),
+        options: formattedOptions,
+        marks: Number(question.marks) || 1,
+      };
+    });
+
     // Create new quiz
     const newQuiz = new Quiz({
       examId: req.params.examId,
-      title,
-      description,
-      questions,
-      timeLimit,
+      title: title.trim(),
+      description: description.trim(),
+      questions: formattedQuestions,
+      timeLimit: Number(timeLimit) || 10,
       createdBy: req.user.id,
     });
 
@@ -97,7 +127,10 @@ exports.createQuiz = async (req, res) => {
         errors,
       });
     }
-    res.status(500).send("Server error");
+    res.status(500).json({
+      msg: "Server error",
+      error: err.message,
+    });
   }
 };
 

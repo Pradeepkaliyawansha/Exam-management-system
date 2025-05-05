@@ -170,14 +170,14 @@ const QuizForm = ({
     if (validate()) {
       // Ensure data is properly formatted before sending
       const submitData = {
-        title: formData.title,
-        description: formData.description,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
         timeLimit: Number(formData.timeLimit), // Ensure it's a number
         questions: formData.questions.map((question) => ({
-          question: question.question,
+          question: question.question.trim(),
           options: question.options.map((option) => ({
-            text: option.text,
-            isCorrect: option.isCorrect,
+            text: option.text.trim(),
+            isCorrect: Boolean(option.isCorrect), // Ensure it's a boolean
           })),
           marks: Number(question.marks), // Ensure it's a number
         })),

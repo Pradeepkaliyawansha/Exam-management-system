@@ -14,15 +14,32 @@ router.post(
     auth,
     isAdmin,
     [
-      check("title", "Title is required").not().isEmpty(),
-      check("description", "Description is required").not().isEmpty(),
+      check("title", "Title is required").not().isEmpty().trim(),
+      check("description", "Description is required").not().isEmpty().trim(),
       check("questions", "Questions are required").isArray({ min: 1 }),
       check("questions.*.question", "Question text is required")
         .not()
-        .isEmpty(),
-      check("questions.*.options", "Options are required").isArray({ min: 4 }),
-      check("questions.*.marks", "Marks are required").isInt({ min: 1 }),
-      check("timeLimit", "Time limit is required").isInt({ min: 1 }),
+        .isEmpty()
+        .trim(),
+      check(
+        "questions.*.options",
+        "Each question must have exactly 4 options"
+      ).isArray({ min: 4, max: 4 }),
+      check("questions.*.options.*.text", "Option text is required")
+        .not()
+        .isEmpty()
+        .trim(),
+      check(
+        "questions.*.options.*.isCorrect",
+        "isCorrect field is required for each option"
+      ).isBoolean(),
+      check(
+        "questions.*.marks",
+        "Marks are required and must be positive"
+      ).isInt({ min: 1 }),
+      check("timeLimit", "Time limit is required and must be positive").isInt({
+        min: 1,
+      }),
     ],
   ],
   quizController.createQuiz
